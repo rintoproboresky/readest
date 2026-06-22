@@ -348,7 +348,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const config = getConfig(bookKey);
       if (!config) return;
 
-      const existing = config.booknotes.find(
+      const existing = config.booknotes?.find(
         (n) => n.type === 'translation' && n.cfi === selection.cfi && !n.deletedAt,
       );
       if (existing) {
@@ -365,10 +365,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
+        config.booknotes = config.booknotes ?? [];
         config.booknotes.push(note);
         view?.addAnnotation({ ...note, value: `${TRANSLATION_PREFIX}${note.cfi}` });
       }
-      updateBooknotes(bookKey, config.booknotes);
+      updateBooknotes(bookKey, config.booknotes ?? []);
       saveConfig(bookKey, config);
     },
     [selection, bookKey, view, getConfig, updateBooknotes, saveConfig],
