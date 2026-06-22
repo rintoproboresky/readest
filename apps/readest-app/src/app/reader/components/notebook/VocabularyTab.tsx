@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { RiQuillPenLine } from 'react-icons/ri';
+import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import EmptyState from '../EmptyState';
 
@@ -10,6 +12,8 @@ interface VocabularyTabProps {
 
 const VocabularyTab: React.FC<VocabularyTabProps> = ({ bookKey }) => {
   const _ = useTranslation();
+  const { envConfig } = useEnv();
+  const { settings } = useSettingsStore();
   const getConfig = useBookDataStore((s) => s.getConfig);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
   const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
@@ -17,18 +21,21 @@ const VocabularyTab: React.FC<VocabularyTabProps> = ({ bookKey }) => {
 
   const translations = useMemo(() => {
     if (!config) return [];
-    return config.booknotes
+    return (config.booknotes ?? [])
       .filter((n) => n.type === 'translation' && !n.deletedAt)
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [config]);
 
   const handleDelete = (id: string) => {
     if (!config) return;
-    const note = config.booknotes.find((n) => n.id === id);
-    if (!note) return;
-    note.deletedAt = Date.now();
-    updateBooknotes(bookKey, config.booknotes);
-    saveConfig(bookKey, config);
+    const { booknotes: notes = [] } = config;
+    const noteIdx = notes.findIndex((n) => n.id === id);
+    if (noteIdx === -1) return;
+    notes[noteIdx] = { ...notes[noteIdx], deletedAt: Date.now(), updatedAt: Date.now() };
+    const updatedConfig = updateBooknotes(bookKey, notes);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
   };
 
   if (translations.length === 0) {
