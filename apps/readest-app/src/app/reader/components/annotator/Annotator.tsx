@@ -601,10 +601,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { booknotes = [] } = config;
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+    console.warn('[trans-click]', { value, rawValue, booknotesLen: booknotes.length });
     const translation = booknotes.find(
       (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
     );
+    console.warn('[trans-click] translation:', translation);
     if (translation?.translation) {
+      console.warn('[trans-click] dispatching hint');
       eventDispatcher.dispatch('hint', {
         message: `${translation.text} → ${translation.translation}`,
         duration: 4000,
