@@ -38,4 +38,11 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   maxContextChunks: 10,
   indexingMode: 'on-demand',
   reedy: { enabled: false },
+
+  llm: {
+    provider: 'openrouter',
+    apiKey: '',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    model: '',
+  },
 };

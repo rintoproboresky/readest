@@ -39,6 +39,17 @@ export interface AISettings {
   indexingMode: 'on-demand' | 'background';
 
   /**
+   * LLM translation provider configuration.
+   * Stored under aiSettings (NOT in SETTINGS_WHITELIST) so API keys stay local.
+   */
+  llm?: {
+    provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
+    apiKey: string;
+    baseUrl: string;
+    model: string;
+  };
+
+  /**
    * Reedy MVP retrieval (Turso vector + Tantivy FTS + CFI citations).
    * MVP is desktop-only — the runtime gate in `selectBackend()` enforces
    * isTauri() regardless of this flag. UI in M1.8 disables the toggle on web.

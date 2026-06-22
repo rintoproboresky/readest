@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useSettingsStore } from '@/store/settingsStore';
 import {
   ErrorCodes,
   getTranslator,
@@ -9,6 +10,7 @@ import {
 } from '@/services/translators';
 import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
 import { polish, preprocess } from '@/services/translators';
+import { configureLLM } from '@/services/translators/providers/llm';
 import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
 import { useTranslation } from './useTranslation';
@@ -90,6 +92,10 @@ export function useTranslator({
       setLoading(true);
 
       try {
+        if (selectedProvider === 'llm') {
+          const s = useSettingsStore.getState().settings;
+          configureLLM(s.aiSettings?.llm ?? null);
+        }
         const translator = translators.find((t) => t.name === selectedProvider);
         if (!translator) {
           throw new Error(`No translator found for provider: ${selectedProvider}`);
