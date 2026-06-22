@@ -144,13 +144,23 @@ const processLoadedEntries = (
   // console.log(`Loaded ${filteredEntries.length} translations into memory cache`);
 };
 
+function normalizeText(text: string): string {
+  return text.trim().replace(/\s+/g, ' ').toLowerCase().normalize('NFKC');
+}
+
 export const getCacheKey = (
   text: string,
   sourceLang: string,
   targetLang: string,
   provider: string,
+  model?: string,
+  promptVersion?: string,
 ): string => {
-  return `${provider}:${sourceLang}:${targetLang}:${text}`;
+  const normalized = normalizeText(text);
+  if (model && promptVersion) {
+    return `${provider}:${model}:${promptVersion}:${sourceLang}:${targetLang}:${normalized}`;
+  }
+  return `${provider}:${sourceLang}:${targetLang}:${normalized}`;
 };
 
 export const getFromCache = async (
@@ -158,10 +168,12 @@ export const getFromCache = async (
   sourceLang: string,
   targetLang: string,
   provider: string,
+  model?: string,
+  promptVersion?: string,
 ): Promise<string | null> => {
   if (!text?.trim()) return null;
 
-  const key = getCacheKey(text, sourceLang, targetLang, provider);
+  const key = getCacheKey(text, sourceLang, targetLang, provider, model, promptVersion);
 
   if (memoryCache[key]) {
     return memoryCache[key];
@@ -205,10 +217,12 @@ export const storeInCache = async (
   sourceLang: string,
   targetLang: string,
   provider: string,
+  model?: string,
+  promptVersion?: string,
 ): Promise<void> => {
   if (!text?.trim() || !translation) return;
 
-  const key = getCacheKey(text, sourceLang, targetLang, provider);
+  const key = getCacheKey(text, sourceLang, targetLang, provider, model, promptVersion);
   const timestamp = Date.now();
 
   memoryCache[key] = translation;

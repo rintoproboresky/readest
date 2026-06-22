@@ -40,7 +40,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     model: model || 'gpt-4o-mini',
     messages,
     temperature: temperature ?? 0.3,
-    max_tokens: max_tokens ?? 1024,
+    max_tokens: max_tokens ?? 64,
   };
 
   try {

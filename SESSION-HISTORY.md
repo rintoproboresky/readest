@@ -118,6 +118,57 @@ Fix "AI translation tidak muncul" issue on VPS deployment and address poor perfo
 | `docker/.env` | Edit |
 | `Dockerfile` | Edit |
 
+## Session 3 — 2026-06-22
+
+### Goal
+Audit, bugfix, and optimize LLM Translation system: stale request race, model-aware cache key, request dedup, max_tokens, text normalization, and LRU evaluation.
+
+### Work Summary
+
+#### Fixed (Bug)
+- **Stale request race** — `TranslatorPopup.tsx:100-142` — added cancelled flag pattern in `useEffect`. Prevents slow response from old selection overwriting latest selection's translation.
+
+#### Changed (Optimizations)
+- **Model-aware cache key** — `cache.ts:getCacheKey` now accepts optional `model`/`promptVersion`. New format: `llm:gemini-2.5-flash-lite:v1:en:id:hello`. Prevents stale cache hits when model or prompt changes.
+- **Request dedup** — `llm.ts` — added `pendingRequests: Map<string, Promise<string>>`. Identical in-flight requests (same model+lang+text) share the same promise. Cleaned up in `finally`.
+- **max_tokens: 1024 → 64** — `llm.ts` + API proxy. Inline translations output 1-10 tokens, no reason to reserve 1024.
+- **Text normalization for cache** — `cache.ts` — `normalizeText()` trims, collapses spaces, lowercases, normalizes NFKC. `Hello` / `hello` / `HELLO` map to same cache key.
+- **LRU evaluation** — analyzed: not worth it. Memory usage is negligible (<6MB even at 100K entries), and `preloadOptions.maxEntries` already caps preload.
+
+#### Created
+- (none)
+
+#### Edited
+- `src/app/reader/components/annotator/TranslatorPopup.tsx` — Stale request fix
+- `src/services/translators/cache.ts` — Model-aware key, text normalization
+- `src/hooks/useTranslator.ts` — Thread LLM model+promptVersion to cache calls
+- `src/services/translators/providers/llm.ts` — `PROMPT_VERSION`, request dedup, `max_tokens=64`
+- `src/pages/api/llm/translate.ts` — `max_tokens` fallback to 64
+- `src/__tests__/services/translators/cache.test.ts` — 10 new tests
+- `SESSION-HISTORY.md` — This entry
+
+#### Tested
+- `src/__tests__/services/translators/cache.test.ts` — 29 passed (24 old + 5 new)
+- `src/__tests__/services/translators/providers/llm.test.ts` — 20 passed
+- Full translator suite: 105 passed across 4 test files
+
+#### Key Decisions
+- LRU memory cache: **skip** — memory impact negligible, IndexedDB already handles eviction
+- Batch translation: **skip** — `TranslatorPopup` always sends 1 item, no multi-selection UI exists
+- Normalization in `getCacheKey` (not caller) — automatic for all providers, zero missed call sites
+- Dedup key excludes `PROMPT_VERSION` — it's a compile-time constant, concurrent requests always match
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `src/app/reader/components/annotator/TranslatorPopup.tsx` | Edit |
+| `src/services/translators/cache.ts` | Edit |
+| `src/hooks/useTranslator.ts` | Edit |
+| `src/services/translators/providers/llm.ts` | Edit |
+| `src/pages/api/llm/translate.ts` | Edit |
+| `src/__tests__/services/translators/cache.test.ts` | Edit |
+| `SESSION-HISTORY.md` | Edit |
+
 ---
 
 ## Format Template for Next Sessions

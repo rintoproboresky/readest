@@ -106,6 +106,59 @@ describe('translation cache', () => {
       const key = getCacheKey('', '', '', '');
       expect(key).toBe(':::');
     });
+
+    test('includes model and promptVersion when provided', () => {
+      const key = getCacheKey('hello', 'en', 'id', 'llm', 'gemini-2.5-flash-lite', 'v1');
+      expect(key).toBe('llm:gemini-2.5-flash-lite:v1:en:id:hello');
+    });
+
+    test('omits model and promptVersion when not provided', () => {
+      const key = getCacheKey('hello', 'en', 'id', 'llm');
+      expect(key).toBe('llm:en:id:hello');
+    });
+
+    test('produces different keys for different models', () => {
+      const keyA = getCacheKey('hello', 'en', 'id', 'llm', 'gemini-2.5-flash-lite', 'v1');
+      const keyB = getCacheKey('hello', 'en', 'id', 'llm', 'gpt-4o-mini', 'v1');
+      expect(keyA).not.toBe(keyB);
+    });
+
+    test('produces different keys for different prompt versions', () => {
+      const keyA = getCacheKey('hello', 'en', 'id', 'llm', 'gemini-2.5-flash-lite', 'v1');
+      const keyB = getCacheKey('hello', 'en', 'id', 'llm', 'gemini-2.5-flash-lite', 'v2');
+      expect(keyA).not.toBe(keyB);
+    });
+
+    describe('normalization', () => {
+      test('lowercases text', () => {
+        const a = getCacheKey('Hello', 'en', 'id', 'llm');
+        const b = getCacheKey('hello', 'en', 'id', 'llm');
+        expect(a).toBe(b);
+      });
+
+      test('trims whitespace', () => {
+        const a = getCacheKey('  hello  ', 'en', 'id', 'llm');
+        const b = getCacheKey('hello', 'en', 'id', 'llm');
+        expect(a).toBe(b);
+      });
+
+      test('collapses multiple spaces', () => {
+        const a = getCacheKey('hello   world', 'en', 'id', 'llm');
+        const b = getCacheKey('hello world', 'en', 'id', 'llm');
+        expect(a).toBe(b);
+      });
+
+      test('normalizes unicode', () => {
+        const a = getCacheKey('\u0065\u0301', 'en', 'id', 'llm');
+        const b = getCacheKey('\u00E9', 'en', 'id', 'llm');
+        expect(a).toBe(b);
+      });
+
+      test('combines all normalizations', () => {
+        const key = getCacheKey('  Hello   WORLD!  ', 'en', 'id', 'llm');
+        expect(key).toBe('llm:en:id:hello world!');
+      });
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -174,6 +227,17 @@ describe('translation cache', () => {
 
       const result = await getFromCache('hello', 'en', 'fr', 'google');
       expect(result).toBe('salut');
+    });
+
+    test('different models produce different cache entries', async () => {
+      await storeInCache('hello', 'bonjour-gemini', 'en', 'fr', 'llm', 'gemini-2.5-flash-lite', 'v1');
+      await storeInCache('hello', 'bonjour-gpt', 'en', 'fr', 'llm', 'gpt-4o-mini', 'v1');
+
+      const fromGemini = await getFromCache('hello', 'en', 'fr', 'llm', 'gemini-2.5-flash-lite', 'v1');
+      const fromGpt = await getFromCache('hello', 'en', 'fr', 'llm', 'gpt-4o-mini', 'v1');
+
+      expect(fromGemini).toBe('bonjour-gemini');
+      expect(fromGpt).toBe('bonjour-gpt');
     });
   });
 

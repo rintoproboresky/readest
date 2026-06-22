@@ -10,7 +10,7 @@ import {
 } from '@/services/translators';
 import { getFromCache, storeInCache, UseTranslatorOptions } from '@/services/translators';
 import { polish, preprocess } from '@/services/translators';
-import { configureLLM } from '@/services/translators/providers/llm';
+import { configureLLM, PROMPT_VERSION } from '@/services/translators/providers/llm';
 import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
 import { useTranslation } from './useTranslation';
@@ -57,6 +57,14 @@ export function useTranslator({
         return textsToTranslate;
       }
 
+      let llmModel: string | undefined;
+      let llmPromptVersion: string | undefined;
+      if (selectedProvider === 'llm') {
+        const s = useSettingsStore.getState().settings;
+        llmModel = s.aiSettings?.llm?.model || 'gpt-4o-mini';
+        llmPromptVersion = PROMPT_VERSION;
+      }
+
       const textsNeedingTranslation: string[] = [];
       const indicesNeedingTranslation: number[] = [];
 
@@ -69,6 +77,8 @@ export function useTranslator({
             sourceLanguage,
             targetLanguage,
             selectedProvider,
+            llmModel,
+            llmPromptVersion,
           );
           if (cachedTranslation) return;
 
@@ -80,7 +90,7 @@ export function useTranslator({
       if (textsNeedingTranslation.length === 0) {
         const results = await Promise.all(
           textsToTranslate.map((text) =>
-            getFromCache(text, sourceLanguage, targetLanguage, selectedProvider).then(
+            getFromCache(text, sourceLanguage, targetLanguage, selectedProvider, llmModel, llmPromptVersion).then(
               (cached) => cached || text,
             ),
           ),
@@ -116,6 +126,8 @@ export function useTranslator({
               sourceLanguage,
               targetLanguage,
               selectedProvider,
+              llmModel,
+              llmPromptVersion,
             );
           }),
         );
@@ -136,6 +148,8 @@ export function useTranslator({
                 sourceLanguage,
                 targetLanguage,
                 selectedProvider,
+                llmModel,
+                llmPromptVersion,
               );
 
               if (cachedTranslation) {

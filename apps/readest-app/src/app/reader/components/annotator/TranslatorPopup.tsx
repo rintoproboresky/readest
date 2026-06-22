@@ -98,7 +98,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   }, [translators]);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+
     const fetchTranslation = async () => {
       setError(null);
       setTranslation(null);
@@ -106,6 +108,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
       try {
         const input = text.replaceAll('\n', '').trim();
         const result = await translate([input]);
+        if (cancelled) return;
         const translatedText = result[0];
         const detectedSource = null;
 
@@ -118,6 +121,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           setDetectedSourceLang(detectedSource);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error(err);
         if (!token) {
           setError(_('Unable to fetch the translation. Please log in first and try again.'));
@@ -125,11 +129,15 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           setError(_('Unable to fetch the translation. Try again later.'));
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchTranslation();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang, provider, translate]);
 

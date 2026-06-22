@@ -1,5 +1,7 @@
 import { TranslationProvider } from '../types';
 
+export const PROMPT_VERSION = 'v1';
+
 export interface LLMConfig {
   provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
   apiKey: string;
@@ -37,6 +39,8 @@ function buildPrompt(text: string, targetLang: string): string {
   ].join('\n');
 }
 
+const pendingRequests = new Map<string, Promise<string>>();
+
 async function translateBatch(
   texts: string[],
   _sourceLang: string,
@@ -49,70 +53,82 @@ async function translateBatch(
     );
   }
 
+  const model = cfg.model || 'gpt-4o-mini';
+
   return Promise.all(
     texts.map(async (text) => {
       if (!text?.trim()) return text;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const dedupKey = `${model}:${targetLang}:${text}`;
+      const pending = pendingRequests.get(dedupKey);
+      if (pending) return pending;
 
-      try {
-        const messages = [
-          {
-            role: 'system',
-            content: `You are a translator. Translate text to ${targetLang} naturally.`,
-          },
-          {
-            role: 'user',
-            content: buildPrompt(text, targetLang),
-          },
-        ];
+      const promise = (async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const response = await fetch('/api/llm/translate', {
-          method: 'POST',
-          signal: controller.signal,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            apiKey: cfg.apiKey,
-            baseUrl: cfg.baseUrl.replace(/\/$/, ''),
-            model: cfg.model || 'gpt-4o-mini',
-            messages,
-            temperature: 0.3,
-            max_tokens: 1024,
-            headers: {
-              'HTTP-Referer': 'readest',
-              'X-Title': 'Readest LLM Translator',
+        try {
+          const messages = [
+            {
+              role: 'system',
+              content: `You are a translator. Translate text to ${targetLang} naturally.`,
             },
-          }),
-        });
+            {
+              role: 'user',
+              content: buildPrompt(text, targetLang),
+            },
+          ];
 
-        if (!response.ok) {
-          const status = response.status;
-          if (status === 401 || status === 403) {
-            throw new Error('LLM Translation: Invalid API key (unauthorized)');
+          const response = await fetch('/api/llm/translate', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiKey: cfg.apiKey,
+              baseUrl: cfg.baseUrl.replace(/\/$/, ''),
+              model,
+              messages,
+              temperature: 0.3,
+              max_tokens: 64,
+              headers: {
+                'HTTP-Referer': 'readest',
+                'X-Title': 'Readest LLM Translator',
+              },
+            }),
+          });
+
+          if (!response.ok) {
+            const status = response.status;
+            if (status === 401 || status === 403) {
+              throw new Error('LLM Translation: Invalid API key (unauthorized)');
+            }
+            if (status === 429) {
+              throw new Error('LLM Translation: Rate limited. Please wait and try again.');
+            }
+            throw new Error(`LLM Translation: API error (HTTP ${status})`);
           }
-          if (status === 429) {
-            throw new Error('LLM Translation: Rate limited. Please wait and try again.');
+
+          const data = await response.json();
+          const content = data?.choices?.[0]?.message?.content ?? data?.choices?.[0]?.text ?? null;
+
+          if (!content) {
+            throw new Error('LLM Translation: Invalid response format from API');
           }
-          throw new Error(`LLM Translation: API error (HTTP ${status})`);
-        }
 
-        const data = await response.json();
-        const content = data?.choices?.[0]?.message?.content ?? data?.choices?.[0]?.text ?? null;
-
-        if (!content) {
-          throw new Error('LLM Translation: Invalid response format from API');
+          return content.trim();
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            throw new Error('LLM Translation: Request timed out after 15s');
+          }
+          throw err;
+        } finally {
+          clearTimeout(timeoutId);
+          pendingRequests.delete(dedupKey);
         }
+      })();
 
-        return content.trim();
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          throw new Error('LLM Translation: Request timed out after 15s');
-        }
-        throw err;
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      pendingRequests.set(dedupKey, promise);
+      return promise;
     }),
   );
 }
