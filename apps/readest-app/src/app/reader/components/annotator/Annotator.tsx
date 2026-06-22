@@ -596,7 +596,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const onShowAnnotation = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { value, index, range } = detail;
-    const { booknotes = [] } = getConfig(bookKey)!;
+    const config = getConfig(bookKey);
+    if (!config) return;
+    const { booknotes = [] } = config;
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
     const translation = booknotes.find(

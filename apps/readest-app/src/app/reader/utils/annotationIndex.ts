@@ -29,7 +29,15 @@ export function buildAnnotationIndex(booknotes: BookNote[]): AnnotationIndex {
   const globals: BookNote[] = [];
   for (const item of booknotes) {
     if (item.deletedAt) continue;
-    if (item.type !== 'annotation') continue;
+    if (item.type !== 'annotation' && item.type !== 'translation') continue;
+    if (item.type === 'translation') {
+      const spine = getCfiSpinePrefix(item.cfi);
+      if (!spine) continue;
+      const bucket = bySection.get(spine);
+      if (bucket) bucket.push(item);
+      else bySection.set(spine, [item]);
+      continue;
+    }
     const hasNote = !!item.note && item.note.trim().length > 0;
     if (!item.style && !hasNote) continue;
     // Globals fan out a highlight across every occurrence of `text`, so they
@@ -71,8 +79,12 @@ export function selectLocationAnnotations(
   const matchesLocation = createCfiLocationMatcher(location);
   for (const item of candidates) {
     if (!matchesLocation(item.cfi)) continue;
-    if (item.style) annotations.push(item);
-    if (item.note && item.note.trim().length > 0) notes.push(item);
+    if (item.type === 'translation') {
+      annotations.push(item);
+    } else {
+      if (item.style) annotations.push(item);
+      if (item.note && item.note.trim().length > 0) notes.push(item);
+    }
   }
   return { annotations, notes };
 }

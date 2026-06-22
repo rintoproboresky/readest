@@ -21,7 +21,7 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   const { settings } = useSettingsStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai', 'vocabulary'] : ['vocabulary'];
+  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai', 'vocabulary'] : ['notes', 'vocabulary'];
 
   const getTabLabel = (tab: NotebookTab) => {
     switch (tab) {
