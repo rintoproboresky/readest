@@ -49,6 +49,7 @@ WORKDIR /app/apps/readest-app
 # next.config.mjs gates `output: 'standalone'` on BUILD_STANDALONE so other
 # web builds keep their default output.
 ENV BUILD_STANDALONE=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm build-web
 
 # Production runtime ships only the standalone server, its traced node_modules,

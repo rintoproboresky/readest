@@ -108,7 +108,7 @@ Fix "AI translation tidak muncul" issue on VPS deployment and address poor perfo
 #### Next Steps (Updated)
 1. **Test LLM Translation** — hard refresh browser, go Settings → Language → Translation Service, select "LLM (AI)"
 2. **Domain + SSL** — Nginx reverse proxy + Let's Encrypt for HTTPS (fixes SharedArrayBuffer/COOP)
-3. Optionally: `docker compose build --no-cache client` for fully fresh build
+3. Optionally: `docker compose build --no-cache client` for fully fresh build==8
 
 #### Relevant Files
 | File | Action |
