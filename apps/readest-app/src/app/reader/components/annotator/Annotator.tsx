@@ -5,7 +5,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
-import { FoliateView, NOTE_PREFIX, TRANSLATION_PREFIX } from '@/types/view';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
 import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
 import { useThemeStore } from '@/store/themeStore';
@@ -367,7 +367,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         };
         config.booknotes = config.booknotes ?? [];
         config.booknotes.push(note);
-        view?.addAnnotation({ ...note, value: `${TRANSLATION_PREFIX}${note.cfi}` });
+        view?.addAnnotation(note);
       }
       const updatedConfig = updateBooknotes(bookKey, config.booknotes ?? []);
       if (updatedConfig) {
@@ -506,11 +506,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       .filter((booknote) => getIndexFromCfi(booknote.cfi) === detail.index)
       .map((annotation) => {
         try {
-          const value =
-            annotation.type === 'translation'
-              ? `${TRANSLATION_PREFIX}${annotation.cfi}`
-              : annotation.cfi;
-          view?.addAnnotation({ ...annotation, value });
+          view?.addAnnotation(annotation);
         } catch (err) {
           console.warn('Failed to add annotation', { annotation, error: err });
         }
@@ -547,7 +543,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // two overlays and must draw a highlight for the cfi overlay AND a bubble
     // for the note overlay. Keying off `note` drew only the bubble (#4511).
     const kind = decideAnnotationDraw(value, style);
-    if (value?.startsWith(TRANSLATION_PREFIX)) {
+    if ((annotation as BookNote).type === 'translation') {
       const { defaultView } = doc;
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
@@ -602,22 +598,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { value, index, range } = detail;
     const { booknotes = [] } = getConfig(bookKey)!;
     const isNote = value.startsWith(NOTE_PREFIX);
-    const isTranslation = value.startsWith(TRANSLATION_PREFIX);
-    const rawValue = isNote
-      ? value.replace(NOTE_PREFIX, '')
-      : isTranslation
-        ? value.replace(TRANSLATION_PREFIX, '')
-        : value;
-    if (isTranslation) {
-      const translation = booknotes.find(
-        (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
-      );
-      if (translation?.translation) {
-        eventDispatcher.dispatch('hint', {
-          message: `${translation.text} → ${translation.translation}`,
-          duration: 4000,
-        });
-      }
+    const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+    const translation = booknotes.find(
+      (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
+    );
+    if (translation?.translation) {
+      eventDispatcher.dispatch('hint', {
+        message: `${translation.text} → ${translation.translation}`,
+        duration: 4000,
+      });
       return;
     }
     // A click on a fan-out copy of a global annotation reports a
