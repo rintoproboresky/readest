@@ -202,6 +202,56 @@ UX improvements for LLM/AI translation and related components.
 | `src/app/reader/hooks/useTextTranslation.ts` | Edit |
 | `SESSION-HISTORY.md` | Edit |
 
+## Session 5 — 2026-06-22
+
+### Goal
+Saved Translations / Vocabulary feature: auto-save translation results, visual indicator in reader, vocabulary management tab.
+
+### Work Summary
+
+#### Created
+- `VocabularyTab.tsx` — Notebook sidebar tab listing saved translations with delete
+
+#### Edited
+- `src/types/book.ts` — Added `'translation'` to `BookNoteType`, `translation?: string` to `BookNote`
+- `src/types/view.ts` — Added `TRANSLATION_PREFIX` and `TRANSLATION_COLOR` constants
+- `src/app/reader/components/annotator/TranslatorPopup.tsx` — Added `onSaveTranslation` prop, auto-saves after successful translation
+- `src/app/reader/components/annotator/Annotator.tsx` — `handleSaveTranslation` handler; `onCreateOverlay` includes translation type; `onDrawAnnotation` renders teal underline for translations; `onShowAnnotation` shows hint toast on click
+- `src/store/notebookStore.ts` — Added `'vocabulary'` to `NotebookTab` union
+- `src/app/reader/components/notebook/NotebookTabNavigation.tsx` — Added Vocabulary tab (icon, label)
+- `src/app/reader/components/notebook/Notebook.tsx` — Added routing for vocabulary tab
+- `src/__tests__/services/translators/translation-model.test.ts` — 4 model tests
+- `Dockerfile` — Added `NODE_OPTIONS=--max-old-space-size=4096` to build stage
+- `SESSION-HISTORY.md` — This entry
+
+#### Tested
+- 109 translator tests pass (105 existing + 4 new model tests)
+- Full suite: 389/394 pass (4 pre-existing failures unchanged)
+- VPS build verified: docker build + deploy successful
+
+#### Key Decisions
+- Saved as `BookNote` with type `translation` + `translation` field — reuses existing sync, storage, and overlay system
+- Overlay key uses `TRANSLATION_PREFIX` (`readest-trans:`) prefix to avoid conflict with highlight/note overlays
+- Teal underline (`#0891b2`) for visual indicator — distinct from user highlights
+- Click → hint toast (not popup) — lightweight, non-blocking
+- Auto-save (no save button) — seamless, delete from Vocabulary tab if unwanted
+- Vocabulary tab in Notebook — reuses existing sidebar pattern
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `src/types/book.ts` | Edit |
+| `src/types/view.ts` | Edit |
+| `src/app/reader/components/annotator/TranslatorPopup.tsx` | Edit |
+| `src/app/reader/components/annotator/Annotator.tsx` | Edit |
+| `src/store/notebookStore.ts` | Edit |
+| `src/app/reader/components/notebook/NotebookTabNavigation.tsx` | Edit |
+| `src/app/reader/components/notebook/Notebook.tsx` | Edit |
+| `src/app/reader/components/notebook/VocabularyTab.tsx` | Create |
+| `src/__tests__/services/translators/translation-model.test.ts` | Create |
+| `Dockerfile` | Edit |
+| `SESSION-HISTORY.md` | Edit |
+
 ---
 
 ## Format Template for Next Sessions

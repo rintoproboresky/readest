@@ -5,7 +5,7 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
-import { FoliateView, NOTE_PREFIX } from '@/types/view';
+import { FoliateView, NOTE_PREFIX, TRANSLATION_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
 import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
 import { useThemeStore } from '@/store/themeStore';
@@ -342,6 +342,38 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     isTextSelected.current = false;
   };
 
+  const handleSaveTranslation = useCallback(
+    (text: string, translation: string) => {
+      if (!selection?.cfi) return;
+      const config = getConfig(bookKey);
+      if (!config) return;
+
+      const existing = config.booknotes.find(
+        (n) => n.type === 'translation' && n.cfi === selection.cfi && !n.deletedAt,
+      );
+      if (existing) {
+        existing.translation = translation;
+        existing.updatedAt = Date.now();
+      } else {
+        const note: BookNote = {
+          id: uniqueId(),
+          type: 'translation',
+          cfi: selection.cfi,
+          text,
+          translation,
+          note: '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        config.booknotes.push(note);
+        view?.addAnnotation({ ...note, value: `${TRANSLATION_PREFIX}${note.cfi}` });
+      }
+      updateBooknotes(bookKey, config.booknotes);
+      saveConfig(bookKey, config);
+    },
+    [selection, bookKey, view, getConfig, updateBooknotes, saveConfig],
+  );
+
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { doc, index } = detail;
@@ -461,7 +493,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       | undefined;
     const sectionDoc = sectionContent?.doc;
 
-    const activeAnnotations = booknotes.filter((b) => b.type === 'annotation' && !b.deletedAt);
+    const activeAnnotations = booknotes.filter(
+      (b) => (b.type === 'annotation' || b.type === 'translation') && !b.deletedAt,
+    );
 
     // 1. Draw native overlays only for notes whose anchor (cfi) lives
     //    inside this section — same as before.
@@ -469,7 +503,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       .filter((booknote) => getIndexFromCfi(booknote.cfi) === detail.index)
       .map((annotation) => {
         try {
-          view?.addAnnotation(annotation);
+          const value =
+            annotation.type === 'translation'
+              ? `${TRANSLATION_PREFIX}${annotation.cfi}`
+              : annotation.cfi;
+          view?.addAnnotation({ ...annotation, value });
         } catch (err) {
           console.warn('Failed to add annotation', { annotation, error: err });
         }
@@ -506,7 +544,25 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // two overlays and must draw a highlight for the cfi overlay AND a bubble
     // for the note overlay. Keying off `note` drew only the bubble (#4511).
     const kind = decideAnnotationDraw(value, style);
-    if (kind === 'bubble') {
+    if (value?.startsWith(TRANSLATION_PREFIX)) {
+      const { defaultView } = doc;
+      const node = range.startContainer;
+      const el = node.nodeType === 1 ? node : node.parentElement;
+      const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
+      const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
+      const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
+      const strokeWidth = 2;
+      const verticalCompensation = appService?.isMobile ? 0 : -1;
+      const horizontalCompensation = appService?.isMobile ? -1 : 0;
+      const padding = viewSettings.vertical
+        ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
+        : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
+      draw(Overlayer.underline, {
+        writingMode,
+        color: '#0891b2',
+        padding,
+      });
+    } else if (kind === 'bubble') {
       const { defaultView } = doc;
       const node = range.startContainer;
       const el = node.nodeType === 1 ? node : node.parentElement;
@@ -543,7 +599,24 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { value, index, range } = detail;
     const { booknotes = [] } = getConfig(bookKey)!;
     const isNote = value.startsWith(NOTE_PREFIX);
-    const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+    const isTranslation = value.startsWith(TRANSLATION_PREFIX);
+    const rawValue = isNote
+      ? value.replace(NOTE_PREFIX, '')
+      : isTranslation
+        ? value.replace(TRANSLATION_PREFIX, '')
+        : value;
+    if (isTranslation) {
+      const translation = booknotes.find(
+        (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
+      );
+      if (translation?.translation) {
+        eventDispatcher.dispatch('hint', {
+          message: `${translation.text} → ${translation.translation}`,
+          duration: 4000,
+        });
+      }
+      return;
+    }
     // A click on a fan-out copy of a global annotation reports a
     // synthetic value (`${cfi}#g${i}`); map it back to the source
     // booknote so the popup behaves identically to clicking the
@@ -1681,6 +1754,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           popupWidth={transPopupWidth}
           popupHeight={transPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
+          onSaveTranslation={handleSaveTranslation}
         />
       )}
       {showAnnotPopup &&

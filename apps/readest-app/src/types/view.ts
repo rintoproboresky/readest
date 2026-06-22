@@ -5,6 +5,8 @@ import { TTS } from 'foliate-js/tts.js';
 import { LocaleWithTextInfo } from './misc';
 
 export const NOTE_PREFIX = 'foliate-note:';
+export const TRANSLATION_PREFIX = 'readest-trans:';
+export const TRANSLATION_COLOR = '#0891b2';
 
 type RangeAnchor = (doc: Document) => Range;
 

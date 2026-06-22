@@ -31,6 +31,7 @@ interface TranslatorPopupProps {
   popupWidth: number;
   popupHeight: number;
   onDismiss?: () => void;
+  onSaveTranslation?: (text: string, translation: string) => void;
 }
 
 interface TranslatorType {
@@ -46,6 +47,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   popupWidth,
   popupHeight,
   onDismiss,
+  onSaveTranslation,
 }) => {
   const _ = useTranslation();
   const { token } = useAuth();
@@ -117,6 +119,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
 
         setTranslation(translatedText);
+        onSaveTranslation?.(text, translatedText);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
