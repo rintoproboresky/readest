@@ -169,6 +169,39 @@ Audit, bugfix, and optimize LLM Translation system: stale request race, model-aw
 | `src/__tests__/services/translators/cache.test.ts` | Edit |
 | `SESSION-HISTORY.md` | Edit |
 
+## Session 4 — 2026-06-22
+
+### Goal
+UX improvements for LLM/AI translation and related components.
+
+### Work Summary
+
+#### Edited
+- `src/services/translators/cache.ts` — IndexedDB connection reuse: module-level `dbPromise` + `getDB()` replaces 6 per-call `openDatabase()` calls, all `db.close()` removed, `closeDB()` exported
+- `src/app/reader/components/annotator/TranslatorPopup.tsx` — LLM error passthrough (shows actual error if prefixed with `LLM Translation:`), loading spinner (daisyUI `loading-dots` + `Translating...`)
+- `src/components/settings/llm/LLMTranslationPanel.tsx` — Save toast after saving LLM config
+- `src/app/reader/hooks/useTextTranslation.ts` — Inline translation failure hint: dispatch `hint` event "Translation failed" on first catch per 10s window, auto-dismiss 3s
+- `SESSION-HISTORY.md` — This entry
+
+#### Tested
+- 105 translator tests pass (29 cache, 25 llm, 26 providers, 25 polish)
+- Full suite: 383/388 files pass (4 pre-existing failures: Windows path separator + updater syntax error)
+
+#### Key Decisions
+- Single shared `IDBDatabase` connection kept alive for all cache operations, reducing overhead from 6 connections per translation cycle to 1
+- LLM error passthrough only for `LLM Translation:` prefix messages (already user-friendly in `llm.ts`); other errors still fall back to generic messages
+- Hint (not toast) for inline translation failure — book-scoped and auto-dismissing, prevents toast spam
+- OpenRouter key works only on free models with aggressive rate limits (~1 req / 10-30s)
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `src/services/translators/cache.ts` | Edit |
+| `src/app/reader/components/annotator/TranslatorPopup.tsx` | Edit |
+| `src/components/settings/llm/LLMTranslationPanel.tsx` | Edit |
+| `src/app/reader/hooks/useTextTranslation.ts` | Edit |
+| `SESSION-HISTORY.md` | Edit |
+
 ---
 
 ## Format Template for Next Sessions

@@ -17,6 +17,12 @@ interface CacheEntry {
 const memoryCache: TranslationCache = {};
 const memoryTimestamps: Record<string, number> = {};
 
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function resetDbConnection(): void {
+  dbPromise = null;
+}
+
 const openDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
@@ -49,6 +55,21 @@ const openDatabase = (): Promise<IDBDatabase> => {
   });
 };
 
+async function getDB(): Promise<IDBDatabase> {
+  if (dbPromise) return dbPromise;
+
+  dbPromise = openDatabase().then((db) => {
+    db.onclose = resetDbConnection;
+    db.onversionchange = () => {
+      db.close();
+      resetDbConnection();
+    };
+    return db;
+  });
+
+  return dbPromise;
+}
+
 export const loadCacheFromDB = async (
   options: {
     maxAge?: number;
@@ -58,7 +79,7 @@ export const loadCacheFromDB = async (
   } = {},
 ): Promise<void> => {
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
 
@@ -93,10 +114,6 @@ export const loadCacheFromDB = async (
         console.error('Error loading cache from IndexedDB:', event);
       };
     }
-
-    transaction.oncomplete = () => {
-      db.close();
-    };
   } catch (error) {
     console.error('Failed to load cache from IndexedDB:', error);
   }
@@ -180,7 +197,7 @@ export const getFromCache = async (
   }
 
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(key);
@@ -199,10 +216,6 @@ export const getFromCache = async (
 
       request.onerror = () => {
         resolve(null);
-      };
-
-      transaction.oncomplete = () => {
-        db.close();
       };
     });
   } catch (error) {
@@ -229,7 +242,7 @@ export const storeInCache = async (
   memoryTimestamps[key] = timestamp;
 
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
@@ -247,7 +260,6 @@ export const storeInCache = async (
 
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => {
-        db.close();
         resolve();
       };
 
@@ -312,7 +324,7 @@ export const clearCache = async (filter?: CacheFilterOptions): Promise<number> =
   }
 
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
 
@@ -343,12 +355,10 @@ export const clearCache = async (filter?: CacheFilterOptions): Promise<number> =
 
     return new Promise((resolve) => {
       transaction.oncomplete = () => {
-        db.close();
         resolve(deletedCount);
       };
 
       transaction.onerror = () => {
-        db.close();
         resolve(deletedCount);
       };
     });
@@ -383,7 +393,7 @@ export const getCacheStats = async (
   }
 
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
     const countRequest = store.count();
@@ -419,12 +429,7 @@ export const getCacheStats = async (
         };
       };
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
-
       transaction.onerror = () => {
-        db.close();
         resolve({
           memoryCacheEntries,
           memoryCacheSizeInBytes,
@@ -434,6 +439,14 @@ export const getCacheStats = async (
   } catch (error) {
     console.error('Error getting IndexedDB stats:', error);
     return { memoryCacheEntries, memoryCacheSizeInBytes };
+  }
+};
+
+export const closeDB = async (): Promise<void> => {
+  if (dbPromise) {
+    const db = await dbPromise;
+    db.close();
+    resetDbConnection();
   }
 };
 
@@ -447,7 +460,7 @@ export const pruneCache = async (
   }
 
   try {
-    const db = await openDatabase();
+    const db = await getDB();
     const transaction = db.transaction(STORE_NAME, dryRun ? 'readonly' : 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     const getAllRequest = store.getAll();
@@ -521,10 +534,6 @@ export const pruneCache = async (
 
       getAllRequest.onerror = () => {
         resolve(0);
-      };
-
-      transaction.oncomplete = () => {
-        db.close();
       };
     });
   } catch (error) {

@@ -45,6 +45,7 @@ export function useTextTranslation(
   const pendingDOMUpdates = useRef<Array<() => void>>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failureHintShownRef = useRef(false);
 
   const toggleTranslationVisibility = (visible: boolean) => {
     translatedElements.current.forEach((element) => {
@@ -289,6 +290,15 @@ export function useTextTranslation(
       });
     } catch (err) {
       console.warn('Translation failed:', err);
+      if (!failureHintShownRef.current) {
+        failureHintShownRef.current = true;
+        eventDispatcher.dispatch('hint', {
+          bookKey,
+          message: _('Translation failed'),
+          timeout: 3000,
+        });
+        setTimeout(() => { failureHintShownRef.current = false; }, 10000);
+      }
     }
   };
 

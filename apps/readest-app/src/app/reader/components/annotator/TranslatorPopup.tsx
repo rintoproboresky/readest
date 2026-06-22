@@ -122,8 +122,11 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
       } catch (err) {
         if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
         console.error(err);
-        if (!token) {
+        if (message.includes('LLM Translation:')) {
+          setError(message);
+        } else if (!token) {
           setError(_('Unable to fetch the translation. Please log in first and try again.'));
         } else {
           setError(_('Unable to fetch the translation. Try again later.'));
@@ -196,7 +199,10 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             />
           </div>
           {loading ? (
-            <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
+            <div className='flex items-center gap-2'>
+              <span className='loading loading-dots loading-sm'></span>
+              <p className='text-base italic text-gray-500'>{_('Translating...')}</p>
+            </div>
           ) : (
             <div>
               {error ? (

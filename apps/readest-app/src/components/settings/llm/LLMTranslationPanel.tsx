@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
+import { eventDispatcher } from '@/utils/event';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
 import type { LLMConfig } from '@/services/translators/providers/llm';
 
@@ -56,6 +57,7 @@ const LLMTranslationPanel: React.FC = () => {
     };
     setSettings(updated);
     await saveSettings(envConfig, updated);
+    eventDispatcher.dispatch('toast', { type: 'success', message: _('LLM configuration saved') });
   };
 
   const handleTestConnection = async () => {
