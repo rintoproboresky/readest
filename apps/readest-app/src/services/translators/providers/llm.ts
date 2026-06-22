@@ -39,7 +39,7 @@ function buildPrompt(text: string, targetLang: string): string {
 
 async function translateBatch(
   texts: string[],
-  sourceLang: string,
+  _sourceLang: string,
   targetLang: string,
 ): Promise<string[]> {
   const cfg = _config;
