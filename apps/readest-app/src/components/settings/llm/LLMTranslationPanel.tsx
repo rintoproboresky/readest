@@ -153,7 +153,7 @@ const LLMTranslationPanel: React.FC = () => {
         />
       </div>
 
-      <SettingsRow>
+      <SettingsRow label={''}>
         <div className='flex items-center gap-2'>
           <button
             className='btn btn-outline btn-sm'
