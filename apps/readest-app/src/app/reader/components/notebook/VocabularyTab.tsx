@@ -29,9 +29,10 @@ const VocabularyTab: React.FC<VocabularyTabProps> = ({ bookKey }) => {
   const handleDelete = (id: string) => {
     if (!config) return;
     const { booknotes: notes = [] } = config;
-    const noteIdx = notes.findIndex((n) => n.id === id);
-    if (noteIdx === -1) return;
-    notes[noteIdx] = { ...notes[noteIdx], deletedAt: Date.now(), updatedAt: Date.now() };
+    const note = notes.find((n) => n.id === id);
+    if (!note) return;
+    note.deletedAt = Date.now();
+    note.updatedAt = Date.now();
     const updatedConfig = updateBooknotes(bookKey, notes);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
