@@ -369,10 +369,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         config.booknotes.push(note);
         view?.addAnnotation({ ...note, value: `${TRANSLATION_PREFIX}${note.cfi}` });
       }
-      updateBooknotes(bookKey, config.booknotes ?? []);
-      saveConfig(bookKey, config);
+      const updatedConfig = updateBooknotes(bookKey, config.booknotes ?? []);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
     },
-    [selection, bookKey, view, getConfig, updateBooknotes, saveConfig],
+    [selection, bookKey, view, getConfig, updateBooknotes, saveConfig, envConfig, settings],
   );
 
   const onLoad = (event: Event) => {
