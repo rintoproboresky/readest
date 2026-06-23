@@ -67,10 +67,11 @@ COPY --from=build --chown=node:node /app/apps/readest-app/.next/standalone ./
 # to the server so their default relative paths resolve.
 COPY --from=build --chown=node:node /app/apps/readest-app/.next/static ./apps/readest-app/.next/static
 COPY --from=build --chown=node:node /app/apps/readest-app/public ./apps/readest-app/public
-# Install compression module — Next.js `compress: true` in next.config.mjs
-# relies on the `compression` package, but the standalone tracer doesn't
-# include it. Without it, all 18 MB of JS chunks are served uncompressed.
-RUN echo "{}" > ./package.json && npm install compression@1.7.4 --no-save --loglevel=error
+# Compression proxy wrapping the Next.js standalone server. The built-in
+# `compress: true` option was removed in Next.js 16, so all 18 MB of JS
+# chunks were served uncompressed. start.mjs starts the real server on an
+# internal port and adds gzip compression for /_next/static assets.
+COPY start.mjs ./
 USER node
 EXPOSE 3000
-ENTRYPOINT ["node", "apps/readest-app/server.js"]
+ENTRYPOINT ["node", "start.mjs"]
