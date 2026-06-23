@@ -13,13 +13,31 @@ Fork dari [readest/readest](https://github.com/readest/readest) — cross-platfo
 - VPS: `168.110.216.156`
 - SSH: `ssh -i "D:\Oracle_Cloud\SSH_Key\ssh-key-2025-12-27.key" ubuntu@168.110.216.156`
 - Stack: Supabase DB + GoTrue Auth + PostgREST + Kong API (`:8000`) + MinIO S3 (`:9000`) + client (`:3000`)
-- Build & deploy: `docker compose -f docker/compose.yaml -f docker/compose.build.yaml up -d --build client`
+- ⚠️ **JANGAN build di VPS** — `NODE_OPTIONS=--max-old-space-size=4096` di Dockerfile menyebabkan OOM crash pada 1GB RAM. Build lokal lalu push image:
+  ```bash
+  docker build -t ghcr.io/readest/readest:latest .
+  docker push ghcr.io/readest/readest:latest
+  ssh ubuntu@168.110.216.156 "cd ~/readest && docker compose pull client && docker compose up -d client"
+  ```
+- Build & deploy (hanya jika diperlukan): `docker compose -f docker/compose.yaml -f docker/compose.build.yaml up -d --build client`
 - DB migration: `cat migration.sql | docker exec -i supabase-db psql -U supabase_admin -d postgres`
 
 ## Git Workflow (Windows)
 - `git commit --no-verify` — skip pre-commit hooks (CRLF biome formatter errors)
 - `git push origin main --no-verify` — skip pre-push hooks
 - Semua perubahan di-commit ke branch `main`, push ke `origin/main`
+
+## Compression Proxy (start.mjs)
+- Next.js 16 tidak lagi include built-in `compress` middleware di standalone output
+- `start.mjs` adalah compression proxy yang membungkus Next.js server — internal server di `:3100`, proxy publik di `:3000`
+- Jangan forward `Accept-Encoding` header ke internal server (Next.js masih compress sendiri)
+- Jika modifikasi `start.mjs`, hanya production stage Docker yang perlu rebuild (tapi `COPY . .` invalidasi cache build stage juga)
+
+## Critical Context
+- `config.booknotes` is optional — always use `?? []` or destructure with default
+- `saveConfig` requires 4 args: `(envConfig, bookKey, updatedConfig, settings)`
+- `HintInfo` render di pojok kanan header, bukan di dekat text — desain bawaan
+- `eventDispatcher.dispatch('hint', ...)` harus include `bookKey` agar HintInfo menampilkan toast
 
 ## Server API Proxy
 Beberapa fitur butuh server-side proxy untuk bypass CORS:
