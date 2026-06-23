@@ -12,14 +12,22 @@ Fork dari [readest/readest](https://github.com/readest/readest) — cross-platfo
 ## Deployment (Self-hosted Oracle VPS)
 - VPS: `168.110.216.156`
 - SSH: `ssh -i "D:\Oracle_Cloud\SSH_Key\ssh-key-2025-12-27.key" ubuntu@168.110.216.156`
-- Stack: Supabase DB + GoTrue Auth + PostgREST + Kong API (`:8000`) + MinIO S3 (`:9000`) + client (`:3000`)
-- ⚠️ **JANGAN build di VPS** — `NODE_OPTIONS=--max-old-space-size=4096` di Dockerfile menyebabkan OOM crash pada 1GB RAM. Build lokal lalu push image:
-  ```bash
-  docker build -t ghcr.io/readest/readest:latest .
-  docker push ghcr.io/readest/readest:latest
-  ssh ubuntu@168.110.216.156 "cd ~/readest && docker compose pull client && docker compose up -d client"
-  ```
-- Build & deploy (hanya jika diperlukan): `docker compose -f docker/compose.yaml -f docker/compose.build.yaml up -d --build client`
+- Domain Publik (HTTPS via Cloudflare Tunnel):
+  - Web Client: `https://readest-cloud.my.id`
+  - API Gateway: `https://api.readest-cloud.my.id`
+  - MinIO S3 Storage: `https://s3.readest-cloud.my.id`
+- Cloudflare Tunnel:
+  - Berjalan sebagai service Systemd (`cloudflared.service`) di VPS.
+  - Cek status service: `sudo systemctl status cloudflared`
+- Build & Deploy:
+  - VPS memiliki RAM 6GB + Swap 4GB, sehingga **aman** untuk melakukan build langsung di VPS:
+    `docker compose -f docker/compose.yaml -f docker/compose.build.yaml up -d --build client`
+  - Jika ingin melakukan build lokal dan push:
+    ```bash
+    docker build -t ghcr.io/readest/readest:latest .
+    docker push ghcr.io/readest/readest:latest
+    ssh ubuntu@168.110.216.156 "cd ~/readest && docker compose pull client && docker compose up -d client"
+    ```
 - DB migration: `cat migration.sql | docker exec -i supabase-db psql -U supabase_admin -d postgres`
 
 ## Git Workflow (Windows)
