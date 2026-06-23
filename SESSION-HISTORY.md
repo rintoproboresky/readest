@@ -301,6 +301,40 @@ Fix bugs from Session 5: translation click → hint not showing, Vocabulary tab 
 
 ---
 
+## Session 7 — 2026-06-23
+
+### Goal
+Fix blank black screen issue on VPS client deployment due to double-gzip encoding payload corruption.
+
+### Work Summary
+
+#### Diagnosed
+- Verified JS chunks delivered to browser on port 3000 were double-gzipped.
+- Browser console threw `Uncaught SyntaxError: Invalid or unexpected token` due to un-decodable binary payload.
+
+#### Fixed
+- Pulled latest commit (`6f160577`) on VPS which simplifies proxy (`start.mjs`) to pass through headers directly and delegates compression entirely to Next.js.
+- Rebuilt client Docker image on VPS.
+- Restarted/recreated container on VPS with `--pull never --force-recreate`.
+
+#### Deployed / Tested
+- Verified static chunk compression: gunzip once resolves to valid JS code.
+- Blank screen issue fully resolved.
+
+#### Key Decisions
+- Build directly on VPS is safe since RAM is 6GB + 4GB swap (rather than 1GB).
+- Simple passthrough proxy is more robust than custom zlib compression layer in proxy.
+
+#### Next Steps
+1. Instruct the user to perform a hard refresh and test the web client.
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `SESSION-HISTORY.md` | Edit |
+
+---
+
 ## Format Template for Next Sessions
 
 ```markdown
