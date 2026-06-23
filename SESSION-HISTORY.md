@@ -335,6 +335,44 @@ Fix blank black screen issue on VPS client deployment due to double-gzip encodin
 
 ---
 
+## Session 8 — 2026-06-23
+
+### Goal
+Configure custom domain `readest-cloud.my.id` and setup Cloudflare Tunnel to expose the Readest stack securely over HTTPS without WARP.
+
+### Work Summary
+
+#### Created
+- `C:\Users\Rinto Proboresky\.gemini\antigravity\brain\9352c02c-a372-4192-98b3-24dd2fd8aa0c/scratch/update_vps.py` — Local scratch script to update compose.yaml on VPS.
+- `C:\Users\Rinto Proboresky\.gemini\antigravity\brain\9352c02c-a372-4192-98b3-24dd2fd8aa0c/scratch/update_env.py` — Local scratch script to update .env on VPS.
+
+#### Edited
+- `docker/compose.yaml` — Added fallback environment variable checks for `SUPABASE_PUBLIC_URL` and `S3_PUBLIC_ENDPOINT`.
+- `SESSION-HISTORY.md` — Added Session 8 notes.
+
+#### Deployed / Tested
+- Configured Cloudflare Tunnel on VPS as a Systemd service.
+- Mapped domains: `readest-cloud.my.id` (Client), `api.readest-cloud.my.id` (API Gateway), and `s3.readest-cloud.my.id` (MinIO S3).
+- Updated VPS environment variables (`.env` and `compose.yaml`) to HTTPS endpoints.
+- Resolved architecture mismatch (`exec format error`) by retagging the local `arm64` build.
+- Verified that `https://readest-cloud.my.id/` loads successfully and delivers compressed static assets.
+
+#### Key Decisions
+- Use Cloudflare Tunnel to bypass Telkomsel/Indihome blocks and provide automatic SSL/HTTPS context.
+- Keep the custom `entrypoint` bypassing `start.mjs` since Next.js native compression works.
+- Overrode public endpoints via environment overrides rather than hardcoding in `compose.yaml`.
+
+#### Next Steps
+1. The user can access and verify the deployment directly via `https://readest-cloud.my.id/`.
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `docker/compose.yaml` | Edit |
+| `SESSION-HISTORY.md` | Edit |
+
+---
+
 ## Format Template for Next Sessions
 
 ```markdown
