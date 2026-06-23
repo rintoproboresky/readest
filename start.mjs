@@ -23,12 +23,17 @@ function poll(n) {
 
 function startProxy() {
   http.createServer((req, res) => {
+    // Don't forward accept-encoding to internal server — it also
+    // compresses (Next.js compress:true), which would cause double
+    // compression in our gzip proxy below.
+    const fwdHeaders = { ...req.headers };
+    delete fwdHeaders['accept-encoding'];
     const opts = {
       hostname: '127.0.0.1',
       port: INTERNAL_PORT,
       path: req.url,
       method: req.method,
-      headers: req.headers,
+      headers: fwdHeaders,
     };
     const preq = http.request(opts, (pres) => {
       const compress = req.url.startsWith('/_next/static') &&
