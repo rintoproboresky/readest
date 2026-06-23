@@ -2,6 +2,7 @@
 
 ## Session 1 — 2026-06-22
 
+
 ### Goal
 Deploy the modified Readest with LLM Inline Translation Provider to a self-hosted Oracle VPS and get it fully functional.
 
@@ -250,6 +251,52 @@ Saved Translations / Vocabulary feature: auto-save translation results, visual i
 | `src/app/reader/components/notebook/VocabularyTab.tsx` | Create |
 | `src/__tests__/services/translators/translation-model.test.ts` | Create |
 | `Dockerfile` | Edit |
+| `SESSION-HISTORY.md` | Edit |
+
+---
+
+## Session 6 — 2026-06-22/23
+
+### Goal
+Fix bugs from Session 5: translation click → hint not showing, Vocabulary tab empty on page turn. Add gzip compression to VPS.
+
+### Work Summary
+
+#### Created
+- `start.mjs` — Compression proxy for Next.js 16 standalone server (no built-in compress middleware)
+
+#### Edited
+- `apps/readest-app/src/app/reader/components/annotator/Annotator.tsx` — Fix hint dispatch (missing `bookKey`), add debug logging
+- `apps/readest-app/src/app/reader/utils/annotationIndex.ts` — Include `type: 'translation'` in annotation index
+- `apps/readest-app/src/app/reader/components/notebook/NotebookTabNavigation.tsx` — Fix tabs array order
+- `Dockerfile` — Change entrypoint to `start.mjs`, remove `compression` npm install
+
+#### Fixed
+- Translation click → hint: `HintInfo` requires `bookKey` in dispatch detail
+- Translation overlay disappearance on page turn: `buildAnnotationIndex` filtered out non-`annotation` types
+- Notes tab hidden when AI disabled: tabs array was `['vocabulary']` instead of `['notes', 'vocabulary']`
+- VPS 18MB uncompressed chunks: added gzip compression proxy
+- Double compression bug: internal Next.js server also compresses when `Accept-Encoding: gzip` forwarded
+
+#### Known Issues
+- VPS OOM-crashed during Docker build (`NODE_OPTIONS=--max-old-space-size=4096` on 1GB RAM)
+- Docker build takes 10+ minutes on VPS for any `start.mjs` change
+- VPS currently unreachable (needs reboot from Oracle Console)
+
+#### Next Steps
+1. Reboot VPS from Oracle Cloud Console when accessible
+2. Deploy via local Docker build + push to ghcr.io (avoid building on 1GB VPS)
+3. Clean up debug `console.warn` (DONE: commit e576955b)
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `start.mjs` | Create |
+| `Dockerfile` | Edit |
+| `apps/readest-app/src/app/reader/components/annotator/Annotator.tsx` | Edit |
+| `apps/readest-app/src/app/reader/utils/annotationIndex.ts` | Edit |
+| `apps/readest-app/src/app/reader/components/notebook/NotebookTabNavigation.tsx` | Edit |
+| `apps/readest-app/src/app/reader/components/notebook/VocabularyTab.tsx` | Create (Session 5) |
 | `SESSION-HISTORY.md` | Edit |
 
 ---
