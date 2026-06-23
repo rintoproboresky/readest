@@ -6,7 +6,6 @@ const INTERNAL_PORT = PUBLIC_PORT + 100;
 
 process.env.PORT = String(INTERNAL_PORT);
 
-// Start Next.js standalone server on the internal port
 import('./apps/readest-app/server.js');
 
 function poll(n) {
@@ -16,10 +15,7 @@ function poll(n) {
     startProxy();
   });
   req.on('error', () => {
-    if (n >= 90) {
-      console.error('Timed out waiting for Next.js');
-      process.exit(1);
-    }
+    if (n >= 90) return void process.exit(1);
     setTimeout(() => poll(n + 1), 1000);
   });
   req.end();
@@ -34,21 +30,29 @@ function startProxy() {
       method: req.method,
       headers: req.headers,
     };
-    const proxyReq = http.request(opts, (proxyRes) => {
-      if (req.url.startsWith('/_next/static') && (req.headers['accept-encoding'] || '').includes('gzip')) {
-        const headers = { ...proxyRes.headers };
-        headers['content-encoding'] = 'gzip';
-        headers['vary'] = 'accept-encoding';
-        delete headers['content-length'];
-        res.writeHead(proxyRes.statusCode, headers);
-        proxyRes.pipe(zlib.createGzip()).pipe(res);
-      } else {
-        res.writeHead(proxyRes.statusCode, proxyRes.headers);
-        proxyRes.pipe(res);
+    const preq = http.request(opts, (pres) => {
+      const compress = req.url.startsWith('/_next/static') &&
+        (req.headers['accept-encoding'] || '').includes('gzip');
+      if (!compress) {
+        res.writeHead(pres.statusCode, pres.headers);
+        return pres.pipe(res);
       }
+      const chunks = [];
+      pres.on('data', (c) => chunks.push(c));
+      pres.on('end', () => {
+        zlib.gzip(Buffer.concat(chunks), (err, buf) => {
+          if (err) { res.writeHead(500).end(); return; }
+          const h = { ...pres.headers };
+          h['content-encoding'] = 'gzip';
+          h['vary'] = 'accept-encoding';
+          delete h['content-length'];
+          res.writeHead(pres.statusCode, h);
+          res.end(buf);
+        });
+      });
     });
-    proxyReq.on('error', () => res.writeHead(502).end());
-    req.pipe(proxyReq);
+    preq.on('error', () => res.writeHead(502).end());
+    req.pipe(preq);
   }).listen(PUBLIC_PORT, '0.0.0.0', () => {
     console.log(`✓ Compressing proxy on :${PUBLIC_PORT} → :${INTERNAL_PORT}`);
   });
