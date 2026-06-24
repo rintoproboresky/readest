@@ -46,6 +46,7 @@ export interface AISettings {
     provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
     apiKey: string;
     baseUrl: string;
+    apiPath?: string;
     model: string;
   };
 

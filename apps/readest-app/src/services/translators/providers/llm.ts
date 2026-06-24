@@ -6,6 +6,7 @@ export interface LLMConfig {
   provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
   apiKey: string;
   baseUrl: string;
+  apiPath?: string;
   model: string;
 }
 
@@ -86,6 +87,7 @@ async function translateBatch(
             body: JSON.stringify({
               apiKey: cfg.apiKey,
               baseUrl: cfg.baseUrl.replace(/\/$/, ''),
+              apiPath: cfg.apiPath,
               model,
               messages,
               temperature: 0.3,

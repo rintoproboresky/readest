@@ -7,6 +7,7 @@ const validConfig = {
   provider: 'openrouter' as const,
   apiKey: 'sk-or-v1-test-key',
   baseUrl: 'https://openrouter.ai/api/v1',
+  apiPath: '/chat/completions',
   model: 'gpt-4o-mini',
 };
 
@@ -86,6 +87,7 @@ describe('llmProvider', () => {
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(callBody.apiKey).toBe('sk-or-v1-test-key');
     expect(callBody.baseUrl).toBe('https://openrouter.ai/api/v1');
+    expect(callBody.apiPath).toBe('/chat/completions');
     expect(callBody.model).toBe('gpt-4o-mini');
     expect(callBody.messages).toHaveLength(2);
     expect(callBody.messages[1].role).toBe('user');

@@ -43,6 +43,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
     provider: 'openrouter',
     apiKey: '',
     baseUrl: 'https://openrouter.ai/api/v1',
+    apiPath: '/chat/completions',
     model: '',
   },
 };

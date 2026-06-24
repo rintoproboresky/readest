@@ -11,6 +11,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const {
     apiKey,
     baseUrl,
+    apiPath,
     model,
     messages,
     temperature,
@@ -28,7 +29,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(400).json({ error: 'Messages array is required' });
   }
 
-  const apiUrl = `${baseUrl.replace(/\/$/, '')}/v1/chat/completions`;
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}${apiPath ?? '/v1/chat/completions'}`;
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',

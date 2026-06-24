@@ -17,15 +17,17 @@ const LLMTranslationPanel: React.FC = () => {
   const [provider, setProvider] = useState(llmCfg?.provider ?? 'openrouter');
   const [apiKey, setApiKey] = useState(llmCfg?.apiKey ?? '');
   const [baseUrl, setBaseUrl] = useState(llmCfg?.baseUrl ?? 'https://openrouter.ai/api/v1');
+  const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const providerDefaults: Record<string, { baseUrl: string; model: string }> = {
-    openrouter: { baseUrl: 'https://openrouter.ai/api/v1', model: '' },
-    openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  const providerDefaults: Record<string, { baseUrl: string; apiPath: string; model: string }> = {
+    openrouter: { baseUrl: 'https://openrouter.ai/api/v1', apiPath: '/chat/completions', model: '' },
+    openai: { baseUrl: 'https://api.openai.com/v1', apiPath: '/chat/completions', model: 'gpt-4o-mini' },
     'google-ai-studio': {
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+      apiPath: '/chat/completions',
       model: 'gemini-3.1-flash-lite',
     },
   };
@@ -35,6 +37,7 @@ const LLMTranslationPanel: React.FC = () => {
     const preset = providerDefaults[value];
     if (preset) {
       setBaseUrl(preset.baseUrl);
+      setApiPath(preset.apiPath);
       if (preset.model) setModel(preset.model);
     }
   };
@@ -44,16 +47,16 @@ const LLMTranslationPanel: React.FC = () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, model },
+      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, apiPath, model },
     };
     setSettings(updated);
-  }, [provider, apiKey, baseUrl, model]);
+  }, [provider, apiKey, baseUrl, apiPath, model]);
 
   const handleSave = async () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, model },
+      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, apiPath, model },
     };
     setSettings(updated);
     await saveSettings(envConfig, updated);
@@ -71,6 +74,7 @@ const LLMTranslationPanel: React.FC = () => {
         body: JSON.stringify({
           apiKey,
           baseUrl: baseUrl.replace(/\/$/, ''),
+          apiPath,
           model: model || 'gpt-4o-mini',
           messages: [{ role: 'user', content: 'Translate hello to French.' }],
           max_tokens: 32,
@@ -136,6 +140,17 @@ const LLMTranslationPanel: React.FC = () => {
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
           placeholder='https://openrouter.ai/api/v1'
+        />
+      </div>
+
+      <div className='flex flex-col gap-2 py-3 pe-4'>
+        <SettingLabel>{_('API Path')}</SettingLabel>
+        <input
+          type='text'
+          className='input input-bordered input-sm w-full'
+          value={apiPath}
+          onChange={(e) => setApiPath(e.target.value)}
+          placeholder='/v1/chat/completions'
         />
       </div>
 
