@@ -58,6 +58,7 @@ jobs:
         run: |
           cat >> apps/readest-app/.env.local << 'ENVEOF'
           NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_API_BASE_URL=https://api.readest-cloud.my.id
           NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64=aHR0cHM6Ly9hcGkucmVhZGVzdC1jbG91ZC5teS5pZA==
           NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64=ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnliMnhsSWpvaVlXNXZiaUo5LlAwTTJfR1dVTm5laXdqVUdqakFkR3VYLXJpV0ltRWR3YWlsa2x0bUIxb0E=
           NEXT_PUBLIC_DEFAULT_POSTHOG_URL_BASE64=aHR0cHM6Ly91cy5pLnBvc3Rob2cuY29t
