@@ -126,11 +126,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
       } catch (err) {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(err);
-        if (message.includes('LLM Translation:')) {
-          setError(message);
-        } else if (!token) {
+        if (!token) {
           setError(_('Unable to fetch the translation. Please log in first and try again.'));
         } else {
           setError(_('Unable to fetch the translation. Try again later.'));

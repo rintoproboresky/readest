@@ -40,7 +40,7 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
   const fetchInsight = async () => {
     const llmConfig = settings?.aiSettings?.llm;
     if (!llmConfig?.apiKey) {
-      setError(_('LLM not configured. Go to Settings → Languages → LLM Translation.'));
+      setError(_('LLM not configured. Go to Settings → Word Insight.'));
       setLoadingState('error');
       return;
     }

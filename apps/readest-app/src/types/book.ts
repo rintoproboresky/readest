@@ -155,7 +155,7 @@ export interface BookNote {
   style?: HighlightStyle;
   color?: HighlightColor;
   note: string;
-  /** Saved LLM translation result for this note (type: 'translation' only) */
+  /** Saved translation result for this note (type: 'translation' only) */
   translation?: string;
   /**
    * If true, this annotation should be applied to every occurrence of `text`
