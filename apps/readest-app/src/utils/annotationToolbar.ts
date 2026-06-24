@@ -11,6 +11,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'translate',
   'tts',
   'proofread',
+  'llm-insight',
   'share',
 ];
 
@@ -25,6 +26,7 @@ export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'translate',
   'tts',
   'proofread',
+  'llm-insight',
 ];
 
 // Drop unknown/duplicate entries; fall back to the default when unset (a

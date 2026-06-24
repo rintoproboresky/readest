@@ -77,6 +77,8 @@ import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
+import TranslationNotePopup from './TranslationNotePopup';
+import LLMInsightPopup from './LLMInsightPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
@@ -145,10 +147,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
+  const [showTranslationNotePopup, setShowTranslationNotePopup] = useState(false);
+  const [translationNoteData, setTranslationNoteData] = useState<{
+    text: string;
+    translation: string;
+    cfi: string;
+    style: 'underline' | 'squiggly';
+    color: string;
+  } | null>(null);
+  const [showLLMInsightPopup, setShowLLMInsightPopup] = useState(false);
+  const [llmInsightWord, setLlmInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string } | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
+  const [translationNotePopupPosition, setTranslationNotePopupPosition] = useState<Position>();
+  const [llmInsightPopupPosition, setLlmInsightPopupPosition] = useState<Position>();
   const [proofreadPopupPosition, setProofreadPopupPosition] = useState<Position>();
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
   const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
@@ -188,7 +202,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup || showTranslationNotePopup || showLLMInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -259,10 +273,26 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       proofreadPopupHeight,
       popupPadding,
     );
+    const translationNotePopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      transPopupWidth,
+      transPopupHeight,
+      popupPadding,
+    );
+    const llmInsightPopupPos = getPopupPosition(
+      triangPos,
+      rect,
+      transPopupWidth,
+      Math.min(360, maxHeight),
+      popupPadding,
+    );
     if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
     setAnnotPopupPosition(annotPopupPos);
     setDictPopupPosition(dictPopupPos);
     setTranslatorPopupPosition(transPopupPos);
+    setTranslationNotePopupPosition(translationNotePopupPos);
+    setLlmInsightPopupPosition(llmInsightPopupPos);
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -305,6 +335,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
+      setShowTranslationNotePopup(false);
+      setTranslationNoteData(null);
+      setShowLLMInsightPopup(false);
+      setLlmInsightWord(null);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -344,7 +378,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleSaveTranslation = useCallback(
-    (text: string, translation: string) => {
+    (text: string, translation: string, transStyle?: string, transColor?: string) => {
       if (!selection?.cfi) return;
       const config = getConfig(bookKey);
       if (!config) return;
@@ -354,6 +388,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       );
       if (existing) {
         existing.translation = translation;
+        if (transStyle) existing.style = transStyle as 'underline' | 'squiggly';
+        if (transColor) existing.color = transColor;
         existing.updatedAt = Date.now();
       } else {
         const note: BookNote = {
@@ -363,6 +399,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           text,
           translation,
           note: '',
+          style: (transStyle as 'underline' | 'squiggly') || 'underline',
+          color: transColor || '#0891b2',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -376,6 +414,46 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       }
     },
     [selection, bookKey, view, getConfig, updateBooknotes, saveConfig, envConfig, settings],
+  );
+
+  const handleEditTranslation = useCallback(
+    (cfi: string, newTranslation: string, transStyle?: string, transColor?: string) => {
+      const config = getConfig(bookKey);
+      if (!config) return;
+      const note = config.booknotes?.find(
+        (n) => n.type === 'translation' && n.cfi === cfi && !n.deletedAt,
+      );
+      if (!note) return;
+      note.translation = newTranslation;
+      note.style = (transStyle as 'underline' | 'squiggly') || note.style || 'underline';
+      note.color = transColor || note.color || '#0891b2';
+      note.updatedAt = Date.now();
+      const updatedConfig = updateBooknotes(bookKey, config.booknotes ?? []);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    },
+    [bookKey, getConfig, updateBooknotes, saveConfig, envConfig, settings],
+  );
+
+  const handleDeleteTranslation = useCallback(
+    (cfi: string) => {
+      const config = getConfig(bookKey);
+      if (!config) return;
+      const note = config.booknotes?.find(
+        (n) => n.type === 'translation' && n.cfi === cfi && !n.deletedAt,
+      );
+      if (!note) return;
+      note.deletedAt = Date.now();
+      note.updatedAt = Date.now();
+      const views = getViewsById(bookKey.split('-')[0]!);
+      views.forEach((v) => removeBookNoteOverlays(v, note));
+      const updatedConfig = updateBooknotes(bookKey, config.booknotes ?? []);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    },
+    [bookKey, getConfig, getViewsById, updateBooknotes, saveConfig, envConfig, settings],
   );
 
   const onLoad = (event: Event) => {
@@ -538,9 +616,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const padding = viewSettings.vertical
         ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-      draw(Overlayer.underline, {
+      const transStyle: 'underline' | 'squiggly' =
+        style === 'squiggly' ? 'squiggly' : 'underline';
+      const transColor = isBwEink
+        ? einkFgColor
+        : color
+          ? (getHighlightColorHex(settings, color) || color)
+          : '#0891b2';
+      draw(Overlayer[transStyle], {
         writingMode,
-        color: '#0891b2',
+        color: transColor,
         padding,
       });
     } else if (kind === 'bubble') {
@@ -597,11 +682,26 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
     );
     if (translation?.translation) {
-      eventDispatcher.dispatch('hint', {
-        message: `${translation.text} → ${translation.translation}`,
-        bookKey,
-        timeout: 4000,
+      const sel = {
+        key: bookKey,
+        annotated: false,
+        text: translation.text ?? '',
+        note: '',
+        cfi: rawValue,
+        index,
+        range,
+        page: progress.page,
+      };
+      setShowTranslationNotePopup(true);
+      setTranslationNoteData({
+        text: translation.text ?? rawValue,
+        translation: translation.translation,
+        cfi: rawValue,
+        style: (translation.style as 'underline' | 'squiggly') || 'underline',
+        color: translation.color || '#0891b2',
       });
+      setSelection(sel);
+      handleUpToPopup();
       return;
     }
     // A click on a fan-out copy of a global annotation reports a
@@ -999,15 +1099,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         proofreadPopupHeight,
         popupPadding,
       );
+      const translationNotePopupPos = getPopupPosition(
+        triangPos,
+        rect,
+        transPopupWidth,
+        transPopupHeight,
+        popupPadding,
+      );
+      const llmInsightPopupPos = getPopupPosition(
+        triangPos,
+        rect,
+        transPopupWidth,
+        Math.min(360, maxHeight),
+        popupPadding,
+      );
       if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
       setAnnotPopupPosition(annotPopupPos);
       setDictPopupPosition(dictPopupPos);
       setTranslatorPopupPosition(transPopupPos);
+      setTranslationNotePopupPosition(translationNotePopupPos);
+      setLlmInsightPopupPosition(llmInsightPopupPos);
       setProofreadPopupPosition(proofreadPopupPos);
       setTrianglePosition(triangPos);
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
-      if (wantWordLensDict) {
+      if (showTranslationNotePopup || showLLMInsightPopup) {
+        // Popup already open via onShowAnnotation or handleLLMInsight
+      } else if (wantWordLensDict) {
         // Route through handleDictionary so a Word Lens gloss tap honours the
         // dictionary settings (system dictionary vs the in-app popup) — same
         // as the selection-toolbar and instant-quick-action dictionary paths.
@@ -1334,6 +1452,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
     setShowDeepLPopup(true);
+  };
+
+  const handleLLMInsight = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setShowDictionaryPopup(false);
+    setShowDeepLPopup(false);
+    setShowProofreadPopup(false);
+    setShowTranslationNotePopup(false);
+    setLlmInsightWord({
+      text: selection.text,
+      sourceLang: primaryLang,
+      targetLang: settings.globalReadSettings.translateTargetLang || 'EN',
+    });
+    setShowLLMInsightPopup(true);
   };
 
   const handleSpeakText = async (oneTime = false) => {
@@ -1716,6 +1849,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onClick: handleProofread,
           disabled: bookData.book?.format !== 'EPUB',
         };
+      case 'llm-insight':
+        return { tooltipText: _(label), Icon, onClick: handleLLMInsight };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };
       default:
@@ -1819,6 +1954,43 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             handleDismissPopupAndSelection();
             setProofreadRulesVisibility(true);
           }}
+        />
+      )}
+      {showTranslationNotePopup && trianglePosition && translationNotePopupPosition && translationNoteData && (
+        <TranslationNotePopup
+          text={translationNoteData.text}
+          translation={translationNoteData.translation}
+          cfi={translationNoteData.cfi}
+          style={translationNoteData.style}
+          color={translationNoteData.color}
+          position={translationNotePopupPosition}
+          trianglePosition={trianglePosition}
+          width={transPopupWidth}
+          height={transPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
+          onSave={handleEditTranslation}
+          onDelete={handleDeleteTranslation}
+          onInsight={() => {
+            setShowTranslationNotePopup(false);
+            setLlmInsightWord({
+              text: translationNoteData.text,
+              sourceLang: primaryLang,
+              targetLang: settings.globalReadSettings.translateTargetLang || 'EN',
+            });
+            setShowLLMInsightPopup(true);
+          }}
+        />
+      )}
+      {showLLMInsightPopup && trianglePosition && llmInsightPopupPosition && llmInsightWord && (
+        <LLMInsightPopup
+          word={llmInsightWord.text}
+          sourceLang={llmInsightWord.sourceLang}
+          targetLang={llmInsightWord.targetLang}
+          position={llmInsightPopupPosition}
+          trianglePosition={trianglePosition}
+          width={transPopupWidth}
+          height={Math.min(360, maxHeight)}
+          onDismiss={handleDismissPopupAndSelection}
         />
       )}
       {!editingAnnotation && selection?.handlesSuppressed && selection.range && (

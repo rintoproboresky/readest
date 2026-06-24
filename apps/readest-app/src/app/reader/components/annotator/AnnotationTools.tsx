@@ -2,6 +2,7 @@ import { IconType } from 'react-icons';
 import { FiSearch } from 'react-icons/fi';
 import { FiCopy } from 'react-icons/fi';
 import { FiShare } from 'react-icons/fi';
+import { LuBrain } from 'react-icons/lu';
 import { PiHighlighterFill } from 'react-icons/pi';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
@@ -89,6 +90,13 @@ export const annotationToolButtons = createAnnotationToolButtons([
     label: _('Proofread'),
     tooltip: _('Proofread text after selection'),
     Icon: IoIosBuild,
+  },
+  {
+    type: 'llm-insight',
+    label: _('LLM Insight'),
+    tooltip: _('Get AI-powered word insights and alternatives'),
+    Icon: LuBrain,
+    quickAction: false,
   },
   {
     type: 'share',

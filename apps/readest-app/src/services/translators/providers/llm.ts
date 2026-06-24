@@ -33,10 +33,6 @@ function fillPrompt(template: string, text: string, targetLang: string): string 
 }
 
 function buildPrompt(text: string, targetLang: string): string {
-  const cfg = _config;
-  if (cfg?.systemPrompt) {
-    return fillPrompt(cfg.systemPrompt, text, targetLang);
-  }
   return [
     `Translate the following text to ${targetLang} naturally.`,
     'Rules:',

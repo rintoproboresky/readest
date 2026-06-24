@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
@@ -24,6 +24,23 @@ const LLMTranslationPanel: React.FC = () => {
   const [systemPrompt, setSystemPrompt] = useState(llmCfg?.systemPrompt ?? '');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Sync local state from store once after settings load asynchronously.
+  // Prevents useStates initialized with '' (before store resolves) from
+  // overwriting the store via the write-effect below.
+  const syncedFromStore = useRef(false);
+
+  useEffect(() => {
+    if (!llmCfg) return;
+    if (syncedFromStore.current) return;
+    syncedFromStore.current = true;
+    if (llmCfg.provider) setProvider(llmCfg.provider as LLMConfig['provider']);
+    setApiKey(llmCfg.apiKey ?? '');
+    setBaseUrl(llmCfg.baseUrl ?? 'https://openrouter.ai/api/v1');
+    setApiPath(llmCfg.apiPath ?? '/chat/completions');
+    setModel(llmCfg.model ?? '');
+    setSystemPrompt(llmCfg.systemPrompt ?? '');
+  }, [llmCfg]);
 
   const handleResetPrompt = () => {
     setSystemPrompt('');
@@ -51,6 +68,7 @@ const LLMTranslationPanel: React.FC = () => {
 
   useEffect(() => {
     if (!settings.aiSettings) return;
+    if (!syncedFromStore.current) return;
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,

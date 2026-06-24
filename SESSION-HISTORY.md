@@ -553,4 +553,54 @@ Set up GitHub Actions CI for automated Android APK builds for the self-hosted fo
 | `apps/readest-app/src/pages/api/llm/translate.ts` | Edit (apiPath) |
 | `apps/readest-app/src/components/settings/llm/LLMTranslationPanel.tsx` | Edit (apiPath UI) |
 | `apps/readest-app/src/__tests__/services/translators/providers/llm.test.ts` | Edit (apiPath tests) |
+
+## Session 5 — 2026-06-25
+
+### Goal
+Implement LLM Word Insight feature (separate from translation), replace header-based translation hint with inline popup, add Edit/Delete/color+style customization for translation notes, and add Vocabulary tab to left sidebar.
+
+### Work Summary
+
+#### Implemented
+- **LLM Word Insight service** — `services/llm/wordInsight.ts` with dedicated JSON-mode prompt for word alternatives with usage labels, examples, and confidence scores
+- **LLMInsightPopup** — full popup with loading/error/success states, alternatives list with badges, note section
+- **TranslationNotePopup** — replaces `HintInfo` header dispatch with inline popup at tap location
+- **Dual entry points** — both toolbar "🤖 LLM Insight" button and "🤖 Insight" in TranslationNotePopup converge to same LLMInsightPopup
+
+#### Fixed
+- **API key disappearing from LLM settings** — added `syncedFromStore` ref + sync guard in `LLMTranslationPanel.tsx` to prevent empty `useState` from overwriting store after async load
+- **Duplicate system+user messages** — removed `cfg?.systemPrompt` check from `buildPrompt()` in `llm.ts`
+
+#### Translation Note Popup Enhancements
+- **Edit** — inline textarea to modify translation text, saved via `handleEditTranslation`
+- **Delete** — soft-delete (`deletedAt`) + remove overlay from views + persist
+- **Color picker + Style toggle** — new `TranslationStylePicker` component with 6 color swatches + underline/squiggly toggle
+  - Added to `TranslatorPopup` (auto-save with chosen style) and `TranslationNotePopup` (edit mode)
+  - `onDrawAnnotation` reads `note.style`/`note.color` instead of hardcoding `#0891b2`
+
+#### Vocabulary Tab
+- Added `'vocabulary'` tab to left sidebar (`TabNavigation.tsx` + `Content.tsx`) with `PiBookOpen` icon
+- Reuses existing `VocabularyTab` component from notebook
+
+#### Toolbar Registration
+- Added `'llm-insight'` to `ALL_ANNOTATION_TOOL_TYPES` and `DEFAULT_ANNOTATION_TOOLBAR_ITEMS`
+- Updated toolbar tests for new tool count
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `apps/readest-app/src/services/llm/wordInsight.ts` | Created |
+| `apps/readest-app/src/app/reader/components/annotator/LLMInsightPopup.tsx` | Created |
+| `apps/readest-app/src/app/reader/components/annotator/TranslationNotePopup.tsx` | Rewritten (edit/delete/style/color) |
+| `apps/readest-app/src/app/reader/components/annotator/TranslationStylePicker.tsx` | Created |
+| `apps/readest-app/src/app/reader/components/annotator/Annotator.tsx` | Major edits |
+| `apps/readest-app/src/app/reader/components/annotator/AnnotationTools.tsx` | Edit (llm-insight button) |
+| `apps/readest-app/src/app/reader/components/annotator/TranslatorPopup.tsx` | Edit (style picker) |
+| `apps/readest-app/src/types/annotator.ts` | Edit (llm-insight type) |
+| `apps/readest-app/src/utils/annotationToolbar.ts` | Edit (register tool) |
+| `apps/readest-app/src/services/translators/providers/llm.ts` | Edit (fix duplicate messages) |
+| `apps/readest-app/src/components/settings/llm/LLMTranslationPanel.tsx` | Edit (fix API key race) |
+| `apps/readest-app/src/app/reader/components/sidebar/TabNavigation.tsx` | Edit (vocabulary tab) |
+| `apps/readest-app/src/app/reader/components/sidebar/Content.tsx` | Edit (vocabulary tab) |
+| `apps/readest-app/src/__tests__/utils/annotationToolbar.test.ts` | Edit (updated expectations) |
 ```

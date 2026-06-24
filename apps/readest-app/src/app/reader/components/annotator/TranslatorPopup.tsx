@@ -13,6 +13,7 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import Select from '@/components/Select';
+import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
 
 const notSupportedLangs = [''];
 
@@ -31,7 +32,7 @@ interface TranslatorPopupProps {
   popupWidth: number;
   popupHeight: number;
   onDismiss?: () => void;
-  onSaveTranslation?: (text: string, translation: string) => void;
+  onSaveTranslation?: (text: string, translation: string, style?: string, color?: string) => void;
 }
 
 interface TranslatorType {
@@ -59,6 +60,8 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   const [translation, setTranslation] = useState<string | null>(null);
   const [detectedSourceLang, setDetectedSourceLang] = useState<string | null>(null);
 
+  const [translationStyle, setTranslationStyle] = useState<TranslationStyle>('underline');
+  const [translationColor, setTranslationColor] = useState('#0891b2');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { translate, translators } = useTranslator({
@@ -119,7 +122,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
 
         setTranslation(translatedText);
-        onSaveTranslation?.(text, translatedText);
+        onSaveTranslation?.(text, translatedText, translationStyle, translationColor);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
@@ -147,6 +150,13 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang, provider, translate]);
 
+  useEffect(() => {
+    if (translation) {
+      onSaveTranslation?.(text, translation, translationStyle, translationColor);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationStyle, translationColor]);
+
   return (
     <div>
       <Popup
@@ -155,7 +165,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         minHeight={popupHeight}
         maxHeight={720}
         position={position}
-        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600'
+        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,2fr] bg-gray-600'
         triangleClassName='text-gray-600'
         onDismiss={onDismiss}
       >
@@ -186,7 +196,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
         <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
 
-        <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
+        <div className='overflow-y-auto px-4 pb-2 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <Select
@@ -215,6 +225,18 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                   {translation || _('No translation available.')}
                 </p>
               )}
+            </div>
+          )}
+          {translation && !error && (
+            <div className='mt-2'>
+              <TranslationStylePicker
+                style={translationStyle}
+                color={translationColor}
+                onChange={(s, c) => {
+                  setTranslationStyle(s);
+                  setTranslationColor(c);
+                }}
+              />
             </div>
           )}
         </div>
