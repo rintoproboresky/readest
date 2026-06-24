@@ -2,3 +2,7 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Android build artifacts
+/.cargo/
+/stub-libs/
