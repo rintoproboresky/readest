@@ -13,7 +13,6 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import Select from '@/components/Select';
-import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
 
 const notSupportedLangs = [''];
 
@@ -60,8 +59,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   const [translation, setTranslation] = useState<string | null>(null);
   const [detectedSourceLang, setDetectedSourceLang] = useState<string | null>(null);
 
-  const [translationStyle, setTranslationStyle] = useState<TranslationStyle>('underline');
-  const [translationColor, setTranslationColor] = useState('#0891b2');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { translate, translators } = useTranslator({
@@ -122,7 +120,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
 
         setTranslation(translatedText);
-        onSaveTranslation?.(text, translatedText, translationStyle, translationColor);
+        onSaveTranslation?.(text, translatedText);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
@@ -149,13 +147,6 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang, provider, translate]);
-
-  useEffect(() => {
-    if (translation) {
-      onSaveTranslation?.(text, translation, translationStyle, translationColor);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translationStyle, translationColor]);
 
   return (
     <div>
@@ -227,18 +218,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               )}
             </div>
           )}
-          {translation && !error && (
-            <div className='mt-2'>
-              <TranslationStylePicker
-                style={translationStyle}
-                color={translationColor}
-                onChange={(s, c) => {
-                  setTranslationStyle(s);
-                  setTranslationColor(c);
-                }}
-              />
-            </div>
-          )}
+
         </div>
         <div className='absolute bottom-0 flex h-8 w-full items-center justify-between px-4'>
           <div className='line-clamp-1 text-xs opacity-60'>

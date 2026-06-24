@@ -1996,9 +1996,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onDismiss={handleDismissPopupAndSelection}
           onSelectAlternative={(translation) => {
             if (llmInsightWord) {
-              const cfi = llmInsightWord.cfi ?? selection?.cfi;
-              if (cfi) {
-                handleSaveTranslation(llmInsightWord.text, translation, cfi);
+              const noteCfi = llmInsightWord.cfi ?? selection?.cfi;
+              if (noteCfi) {
+                handleSaveTranslation(llmInsightWord.text, translation, undefined, undefined, noteCfi);
               }
             }
           }}

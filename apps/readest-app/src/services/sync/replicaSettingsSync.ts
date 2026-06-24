@@ -380,6 +380,9 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   }
   if (patch.aiSettings) {
     out.aiSettings = { ...current.aiSettings, ...patch.aiSettings };
+    if (patch.aiSettings.llm) {
+      out.aiSettings.llm = { ...current.aiSettings?.llm, ...patch.aiSettings.llm };
+    }
   }
   return out;
 };
