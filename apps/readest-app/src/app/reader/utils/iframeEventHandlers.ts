@@ -257,6 +257,15 @@ export const handleClick = (
       return;
     }
 
+    // If the foliate-js overlayer hitTest matched an annotation (highlight,
+    // underline, translation), it fires show-annotation synchronously *before*
+    // this handler runs. The parent's onShowAnnotation sets this flag on the
+    // iframe window; check it here to suppress tap-to-turn for annotation taps.
+    if ((window as any).__supressAnnotationNav) {
+      (window as any).__supressAnnotationNav = false;
+      return;
+    }
+
     // In reflowable books a single tap on an image/table opens the same viewer
     // a long-press does, so the image gallery / table zoom is reachable by both
     // gestures (#4584). Fixed-layout books (PDF/comics/manga) keep tap-to-turn,
