@@ -60,7 +60,6 @@ interface AccountActionsProps {
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
-  userPlan,
   iapAvailable,
   onLogout,
   onResetPassword,

@@ -54,7 +54,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { userProfilePlan, quotas } = useQuotaStats(true);
+  const { quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
@@ -181,11 +181,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.openLastBooks;
     saveSysSettings(envConfig, 'openLastBooks', newValue);
     setIsOpenLastBooks(newValue);
-  };
-
-  const handleUpgrade = () => {
-    navigateToProfile(router);
-    setIsDropdownOpen?.(false);
   };
 
   const handleSetRootDir = () => {

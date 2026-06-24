@@ -9,8 +9,6 @@ import PurchaseCallToActions from './PurchaseCallToActions';
 interface PlanCardProps {
   plan: PlanDetails;
   isUserPlan: boolean;
-  comingSoon?: boolean;
-  upgradable?: boolean;
   index: number;
   currentPlanIndex: number;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
@@ -20,8 +18,6 @@ interface PlanCardProps {
 const PlanCard: React.FC<PlanCardProps> = ({
   plan,
   isUserPlan,
-  comingSoon,
-  upgradable,
   index,
   currentPlanIndex,
   onSubscribe,
@@ -98,11 +94,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
         {plan.plan !== 'purchase' && (
           <PlanActionButton
             plan={plan}
-            comingSoon={comingSoon}
-            upgradable={upgradable}
             isUserPlan={isUserPlan}
-            onSubscribe={onSubscribe}
-            onSelectPlan={onSelectPlan}
           />
         )}
       </div>

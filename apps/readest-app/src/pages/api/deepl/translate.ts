@@ -38,7 +38,7 @@ const generateCacheKey = (text: string, sourceLang: string, targetLang: string):
   return `tr:${hash}`;
 };
 
-const checkDailyUsage = async (userId: string, token: string, chars: number) => {
+const checkDailyUsage = async () => {
   return 0;
 };
 
@@ -131,7 +131,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
-        await checkDailyUsage(user?.id, token, singleText.length);
+        await checkDailyUsage();
 
         return await callDeepLAPI(
           singleText,

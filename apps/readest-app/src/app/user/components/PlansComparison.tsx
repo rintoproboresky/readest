@@ -20,7 +20,6 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
 }) => {
   const { appService } = useEnv();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
-  const [userPlanIndex, setUserPlanIndex] = useState(0);
   const plansScrollRef = useRef<HTMLDivElement>(null);
 
   const userPlans: UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
@@ -33,7 +32,6 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
     if (userPlan) {
       const initialPlanIndex = userPlans.indexOf(userPlan);
       setCurrentPlanIndex(Math.max(0, initialPlanIndex));
-      setUserPlanIndex(Math.max(0, initialPlanIndex));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPlan]);
@@ -153,9 +151,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
           <PlanCard
             key={`plan-${plan.plan}-${index}`}
             plan={plan}
-            comingSoon={false}
             isUserPlan={plan.plan === userPlan}
-            upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
             index={index}
             currentPlanIndex={currentPlanIndex}
             onSubscribe={onSubscribe}

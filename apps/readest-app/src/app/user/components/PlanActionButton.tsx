@@ -4,19 +4,11 @@ import { PlanDetails } from '../utils/plan';
 interface PlanActionButtonProps {
   plan: PlanDetails;
   isUserPlan: boolean;
-  comingSoon?: boolean;
-  upgradable?: boolean;
-  onSubscribe: (priceId?: string) => void;
-  onSelectPlan: (index: number) => void;
 }
 
 const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   plan,
   isUserPlan,
-  comingSoon,
-  upgradable,
-  onSubscribe,
-  onSelectPlan,
 }) => {
   const _ = useTranslation();
 
