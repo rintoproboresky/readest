@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
+import { validateUserAndToken } from '@/utils/access';
 import { isLanAddress } from '@/utils/network';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
@@ -18,6 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  const { user } = await validateUserAndToken(req.headers['authorization']);
+  if (!user) {
+    return res.status(403).json({ error: 'Not authenticated' });
   }
 
   if (!serverUrl || !endpoint) {

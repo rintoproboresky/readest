@@ -28,7 +28,6 @@ function startProxy() {
       headers: req.headers,
     };
     const preq = http.request(opts, (pres) => {
-      pres.headers['access-control-allow-origin'] = '*';
       res.writeHead(pres.statusCode, pres.headers);
       pres.pipe(res);
     });

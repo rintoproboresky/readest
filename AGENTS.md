@@ -41,6 +41,20 @@ Fork dari [readest/readest](https://github.com/readest/readest) — cross-platfo
 - Jangan forward `Accept-Encoding` header ke internal server (Next.js masih compress sendiri)
 - Jika modifikasi `start.mjs`, hanya production stage Docker yang perlu rebuild (tapi `COPY . .` invalidasi cache build stage juga)
 
+## CORS & Kong Routing
+- `docker/volumes/api/kong.yml` HARUS punya service `readest-app` dengan route `/api/` → `client:3000` + plugin `cors`. Tanpa ini, request `/api/*` dari Tauri APK kena CORS error.
+- `docker/compose.yaml` jangan set `entrypoint` untuk service `client` — biar `start.mjs` yang jalan (dari Dockerfile). Entrypoint override bypass compression proxy dan CORS header.
+
+## Android APK Build (Self-hosted Supabase)
+- Android APK (Tauri static export) HARUS pakai kredensial Supabase dari VPS sendiri, BUKAN upstream default di `.env`
+- Kredensial ada di `~/readest/docker/.env` di VPS — ambil lewat SSH: `cat ~/readest/docker/.env | grep -E "^(ANON_KEY|SUPABASE_PUBLIC_URL)"`
+- Update `.env.tauri`:
+  - `NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64` = base64(`https://api.readest-cloud.my.id`)
+  - `NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64` = base64(`<ANON_KEY dari VPS>`)
+- JANGAN copy dari `.env` — itu punya upstream Readest, bukan self-hosted
+- Build APK: `pnpm build` → Gradle → sign
+- Icon: regenerate dengan `pnpm tauri icon public/icon.png`, lalu copy ke `gen/android/app/src/main/res/`
+
 ## Critical Context
 - `config.booknotes` is optional — always use `?? []` or destructure with default
 - `saveConfig` requires 4 args: `(envConfig, bookKey, updatedConfig, settings)`

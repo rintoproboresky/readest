@@ -93,3 +93,13 @@ services:
           allow:
             - admin
             - anon
+
+  - name: readest-app
+    url: http://client:3000
+    routes:
+      - name: readest-app-api
+        strip_path: false
+        paths:
+          - /api/
+    plugins:
+      - name: cors
