@@ -7,7 +7,7 @@ import { useEnv } from '@/context/EnvContext';
 import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
-import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
+import { getLocale, getOSPlatform, getUserLang, makeSafeFilename, uniqueId } from '@/utils/misc';
 import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
@@ -1464,7 +1464,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setLlmInsightWord({
       text: selection.text,
       sourceLang: primaryLang,
-      targetLang: settings.globalReadSettings.translateTargetLang || 'EN',
+      targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
     });
     setShowLLMInsightPopup(true);
   };
@@ -1975,7 +1975,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             setLlmInsightWord({
               text: translationNoteData.text,
               sourceLang: primaryLang,
-              targetLang: settings.globalReadSettings.translateTargetLang || 'EN',
+              targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
             });
             setShowLLMInsightPopup(true);
           }}
