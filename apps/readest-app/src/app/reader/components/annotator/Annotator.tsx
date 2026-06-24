@@ -1465,7 +1465,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setLlmInsightWord({
       text: selection.text,
       sourceLang: primaryLang,
-      targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
+      targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
       cfi: selection.cfi,
     });
     setShowLLMInsightPopup(true);
@@ -1977,7 +1977,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             setLlmInsightWord({
               text: translationNoteData.text,
               sourceLang: primaryLang,
-              targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
+              targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
               cfi: translationNoteData.cfi,
             });
             setShowLLMInsightPopup(true);

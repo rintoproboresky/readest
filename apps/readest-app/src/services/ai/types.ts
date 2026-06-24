@@ -39,7 +39,7 @@ export interface AISettings {
   indexingMode: 'on-demand' | 'background';
 
   /**
-   * LLM translation provider configuration.
+   * LLM Word Insight provider configuration.
    * Synced via SETTINGS_WHITELIST (apiKey encrypted via SETTINGS_ENCRYPTED_FIELDS).
    */
   llm?: {
@@ -49,6 +49,7 @@ export interface AISettings {
     apiPath?: string;
     model: string;
     systemPrompt?: string;
+    targetLang?: string;
   };
 
   /**

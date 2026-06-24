@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TRANSLATOR_LANGS } from '@/services/constants';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
 
 type LLMProvider = 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
@@ -20,6 +21,7 @@ const LLMInsightPanel: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState(llmCfg?.baseUrl ?? 'https://openrouter.ai/api/v1');
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
+  const [insightTargetLang, setInsightTargetLang] = useState(llmCfg?.targetLang ?? '');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -34,6 +36,7 @@ const LLMInsightPanel: React.FC = () => {
     setBaseUrl(llmCfg.baseUrl ?? 'https://openrouter.ai/api/v1');
     setApiPath(llmCfg.apiPath ?? '/chat/completions');
     setModel(llmCfg.model ?? '');
+    setInsightTargetLang(llmCfg.targetLang ?? '');
   }, [llmCfg]);
 
   const providerDefaults: Record<string, { baseUrl: string; apiPath: string; model: string }> = {
@@ -68,10 +71,11 @@ const LLMInsightPanel: React.FC = () => {
         baseUrl,
         apiPath,
         model,
+        targetLang: insightTargetLang,
       },
     };
     setSettings(updated);
-  }, [provider, apiKey, baseUrl, apiPath, model]);
+  }, [provider, apiKey, baseUrl, apiPath, model, insightTargetLang]);
 
   const handleSave = async () => {
     const updated = { ...settings };
@@ -83,6 +87,7 @@ const LLMInsightPanel: React.FC = () => {
         baseUrl,
         apiPath,
         model,
+        targetLang: insightTargetLang,
       },
     };
     setSettings(updated);
@@ -194,6 +199,21 @@ const LLMInsightPanel: React.FC = () => {
           placeholder='/v1/chat/completions'
         />
       </div>
+
+      <SettingsRow label={_('Target Language')} asLabel>
+        <select
+          className='select select-bordered select-sm bg-base-100 text-base-content'
+          value={insightTargetLang}
+          onChange={(e) => setInsightTargetLang(e.target.value)}
+        >
+          <option value=''>{_('Auto (from system language)')}</option>
+          {Object.entries(TRANSLATOR_LANGS).map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </SettingsRow>
 
       <div className='flex flex-col gap-2 py-3 pe-4'>
         <SettingLabel>{_('Model')}</SettingLabel>
