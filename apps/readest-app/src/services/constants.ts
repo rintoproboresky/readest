@@ -172,6 +172,9 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
 export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryColumns: 3,
+  // Import files opened via the system "Open with" chooser into the library by
+  // default so they persist and sync, instead of opening them transiently.
+  autoImportBooksOnOpen: true,
 };
 
 export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
@@ -411,6 +414,8 @@ export const DEFAULT_WORD_LENS_CONFIG: WordLensConfig = {
   wordLensEnabled: false,
   wordLensLevel: 3,
   wordLensHintLang: '',
+  wordLensGlossFontSize: 0.5,
+  wordLensGlossColor: '',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
