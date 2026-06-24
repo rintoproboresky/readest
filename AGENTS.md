@@ -7,7 +7,7 @@ Fork dari [readest/readest](https://github.com/readest/readest) — cross-platfo
 - Improvisasi sesuai kebutuhan. Tidak ada roadmap fixed.
 - Perubahan minimal, modular, dan upstream-friendly.
 - Lihat `SESSION-HISTORY.md` untuk riwayat lengkap tiap sesi.
-- after edit, build/check/test local first, then ask user to push or deploy to vps and build apk.
+- IMPORTANT!, after edit, build/check/test local first, then ask user to push or deploy to vps and build apk and do not do that by yourself.
 
 ## Deployment (Self-hosted Oracle VPS)
 - VPS: `168.110.216.156`

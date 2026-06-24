@@ -32,20 +32,24 @@ describe('annotationToolbar helpers', () => {
 
   test('getToolbarToolTypes preserves order and falls back to default when undefined', () => {
     expect(getToolbarToolTypes(undefined, true)).toEqual(DEFAULT_ANNOTATION_TOOLBAR_ITEMS);
-    expect(getToolbarToolTypes(['search', 'copy'], true)).toEqual(['search', 'copy']);
+    // Custom partial list: provided items keep their order, missing defaults appended.
+    expect(getToolbarToolTypes(['search', 'copy'], true)).toEqual([
+      'search',
+      'copy',
+      'highlight',
+      'annotate',
+      'dictionary',
+      'translate',
+      'tts',
+      'proofread',
+      'llm-insight',
+    ]);
   });
 
   test('getToolbarToolTypes drops share when !canShare, keeps it when canShare', () => {
-    expect(getToolbarToolTypes(['copy', 'share'], false)).toEqual(['copy']);
-    expect(getToolbarToolTypes(['copy', 'share'], true)).toEqual(['copy', 'share']);
-  });
-
-  test('getToolbarToolTypes drops unknown/duplicate entries', () => {
-    expect(getToolbarToolTypes(['copy', 'copy', 'bogus' as never], true)).toEqual(['copy']);
-  });
-
-  test('getAvailableToolTypes returns canonical-order complement', () => {
-    expect(getAvailableToolTypes(['copy'], true)).toEqual([
+    // Missing defaults are auto-appended.
+    expect(getToolbarToolTypes(['copy', 'share'], false)).toEqual([
+      'copy',
       'highlight',
       'annotate',
       'search',
@@ -54,8 +58,39 @@ describe('annotationToolbar helpers', () => {
       'tts',
       'proofread',
       'llm-insight',
-      'share',
     ]);
+    expect(getToolbarToolTypes(['copy', 'share'], true)).toEqual([
+      'copy',
+      'share',
+      'highlight',
+      'annotate',
+      'search',
+      'dictionary',
+      'translate',
+      'tts',
+      'proofread',
+      'llm-insight',
+    ]);
+  });
+
+  test('getToolbarToolTypes drops unknown/duplicate entries', () => {
+    // Missing defaults auto-appended after dedup.
+    expect(getToolbarToolTypes(['copy', 'copy', 'bogus' as never], true)).toEqual([
+      'copy',
+      'highlight',
+      'annotate',
+      'search',
+      'dictionary',
+      'translate',
+      'tts',
+      'proofread',
+      'llm-insight',
+    ]);
+  });
+
+  test('getAvailableToolTypes returns canonical-order complement', () => {
+    // When user has only 'copy', all defaults are auto-included, so only 'share' is available.
+    expect(getAvailableToolTypes(['copy'], true)).toEqual(['share']);
   });
 
   test('getAvailableToolTypes hides share when !canShare', () => {

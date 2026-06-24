@@ -31,6 +31,8 @@ export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
 
 // Drop unknown/duplicate entries; fall back to the default when unset (a
 // pre-existing per-book config may not carry the field yet).
+// When a custom config is present, any items from DEFAULT_ANNOTATION_TOOLBAR_ITEMS
+// that are missing are auto-appended so new defaults always appear.
 const sanitize = (items: AnnotationToolType[] | undefined): AnnotationToolType[] => {
   const source = items ?? DEFAULT_ANNOTATION_TOOLBAR_ITEMS;
   const seen = new Set<AnnotationToolType>();
@@ -39,6 +41,14 @@ const sanitize = (items: AnnotationToolType[] | undefined): AnnotationToolType[]
     if (ALL_ANNOTATION_TOOL_TYPES.includes(type) && !seen.has(type)) {
       seen.add(type);
       out.push(type);
+    }
+  }
+  if (items) {
+    for (const type of DEFAULT_ANNOTATION_TOOLBAR_ITEMS) {
+      if (!seen.has(type) && ALL_ANNOTATION_TOOL_TYPES.includes(type)) {
+        seen.add(type);
+        out.push(type);
+      }
     }
   }
   return out;
