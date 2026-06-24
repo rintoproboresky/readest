@@ -60,6 +60,13 @@ export const SETTINGS_WHITELIST = [
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
+  // LLM translation config. API key is encrypted; provider, endpoint &
+  // model are plaintext so they apply on every device without unlock.
+  'aiSettings.llm.provider',
+  'aiSettings.llm.apiKey',
+  'aiSettings.llm.baseUrl',
+  'aiSettings.llm.apiPath',
+  'aiSettings.llm.model',
 ] as const;
 
 /**
@@ -81,6 +88,7 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'aiSettings.llm.apiKey',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];

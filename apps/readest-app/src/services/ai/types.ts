@@ -40,7 +40,7 @@ export interface AISettings {
 
   /**
    * LLM translation provider configuration.
-   * Stored under aiSettings (NOT in SETTINGS_WHITELIST) so API keys stay local.
+   * Synced via SETTINGS_WHITELIST (apiKey encrypted via SETTINGS_ENCRYPTED_FIELDS).
    */
   llm?: {
     provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';

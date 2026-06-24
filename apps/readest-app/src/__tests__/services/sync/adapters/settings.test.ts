@@ -92,13 +92,14 @@ describe('settingsAdapter', () => {
     expect(out.patch.globalReadSettings?.userHighlightColors).toEqual(userColors);
   });
 
-  test('declares encryptedFields covering kosync / readwise / hardcover credentials only (not serverUrl)', () => {
+  test('declares encryptedFields covering kosync / readwise / hardcover / llm apiKey credentials only (not serverUrl)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
       'kosync.userkey',
       'kosync.password',
       'readwise.accessToken',
       'hardcover.accessToken',
+      'aiSettings.llm.apiKey',
     ]);
   });
 
