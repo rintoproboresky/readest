@@ -56,31 +56,20 @@ const VocabularyTab: React.FC<VocabularyTabProps> = ({ bookKey }) => {
       <ul>
         {translations.map((item) => (
           <li key={item.id} className='my-2'>
-            <div className='border-base-300 bg-base-100 collapse border'>
-              <div className='collapse-title pe-8 text-sm font-medium h-[2.5rem] min-h-[2.5rem] p-[0.6rem] flex items-center justify-between'>
-                <span className='line-clamp-1'>{item.text}</span>
-                <span className='text-xs text-cyan-600 ml-2 shrink-0'>
+            <div className='border-base-300 bg-base-100 flex items-start gap-2 rounded-lg border p-3'>
+              <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+                <span className='text-sm font-medium line-clamp-1'>{item.text}</span>
+                <span className='text-xs text-cyan-600 line-clamp-1'>
                   {item.translation}
                 </span>
               </div>
-              <div className='collapse-content font-size-xs px-3 pb-0'>
-                <div className='flex justify-end'>
-                  <div
-                    role='button'
-                    tabIndex={0}
-                    className='font-size-xs cursor-pointer align-bottom text-red-500 hover:text-red-600'
-                    onClick={() => handleDelete(item.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Backspace' || e.key === 'Delete') {
-                        handleDelete(item.id);
-                      }
-                    }}
-                    aria-label={_('Delete')}
-                  >
-                    {_('Delete')}
-                  </div>
-                </div>
-              </div>
+              <button
+                className='btn btn-ghost btn-xs text-base-content/40 hover:text-error shrink-0 mt-0.5'
+                onClick={() => handleDelete(item.id)}
+                aria-label={_('Delete')}
+              >
+                {_('Delete')}
+              </button>
             </div>
           </li>
         ))}

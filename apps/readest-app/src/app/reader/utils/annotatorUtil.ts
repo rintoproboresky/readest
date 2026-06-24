@@ -186,6 +186,10 @@ export function buildRangeFromPoints(
  */
 export function removeBookNoteOverlays(view: FoliateView | null, note: BookNote): void {
   if (!view) return;
+  if (note.type === 'translation') {
+    view.addAnnotation({ ...note, value: note.cfi }, true);
+    return;
+  }
   if (note.type !== 'annotation') return;
   if (note.style) {
     view.addAnnotation({ ...note, value: note.cfi }, true);

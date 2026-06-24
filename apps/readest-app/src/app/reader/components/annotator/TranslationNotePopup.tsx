@@ -93,13 +93,13 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
             {editing ? (
               <textarea
                 ref={textareaRef}
-                className='textarea textarea-bordered text-info text-base font-medium w-full resize-none'
+                className='textarea textarea-bordered text-base text-base-content font-medium w-full resize-none'
                 rows={3}
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
               />
             ) : (
-              <span className='text-info text-base font-medium'>{translation}</span>
+              <span className='text-base text-base-content font-medium'>{translation}</span>
             )}
           </div>
         </div>
