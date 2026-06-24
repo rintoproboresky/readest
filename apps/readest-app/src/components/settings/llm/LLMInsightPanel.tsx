@@ -51,6 +51,7 @@ const LLMInsightPanel: React.FC = () => {
 
   const handleProviderChange = (value: string) => {
     setProvider(value as LLMProvider);
+    setApiKey('');
     const preset = providerDefaults[value];
     if (preset) {
       setBaseUrl(preset.baseUrl);
