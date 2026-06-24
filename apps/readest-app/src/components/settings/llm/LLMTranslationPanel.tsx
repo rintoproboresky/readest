@@ -3,6 +3,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
+import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
 import type { LLMConfig } from '@/services/translators/providers/llm';
 
@@ -67,23 +68,36 @@ const LLMTranslationPanel: React.FC = () => {
     setConnectionStatus('testing');
     setErrorMessage('');
 
+    const TIMEOUT_MS = 15_000;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     try {
-      const response = await fetch('/api/llm/translate', {
+      const testPayload = {
+        apiKey,
+        baseUrl: baseUrl.replace(/\/$/, ''),
+        apiPath,
+        model: model || 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Translate hello to French.' }],
+        max_tokens: 32,
+        headers: {
+          'HTTP-Referer': 'readest',
+          'X-Title': 'Readest LLM Translator',
+        },
+      };
+
+      const url = isTauriAppPlatform()
+        ? `${baseUrl.replace(/\/$/, '')}${apiPath ?? '/v1/chat/completions'}`
+        : '/api/llm/translate';
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey,
-          baseUrl: baseUrl.replace(/\/$/, ''),
-          apiPath,
-          model: model || 'gpt-4o-mini',
-          messages: [{ role: 'user', content: 'Translate hello to French.' }],
-          max_tokens: 32,
-          headers: {
-            'HTTP-Referer': 'readest',
-            'X-Title': 'Readest LLM Translator',
-          },
-        }),
+        body: JSON.stringify(testPayload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
@@ -100,6 +114,7 @@ const LLMTranslationPanel: React.FC = () => {
 
       setConnectionStatus('success');
     } catch (err) {
+      clearTimeout(timeout);
       setConnectionStatus('error');
       setErrorMessage((err as Error).message || _('Connection failed'));
     }
