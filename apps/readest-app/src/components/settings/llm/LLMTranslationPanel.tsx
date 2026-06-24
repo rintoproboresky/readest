@@ -6,6 +6,7 @@ import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
 import type { LLMConfig } from '@/services/translators/providers/llm';
+import { DEFAULT_LLM_SYSTEM_PROMPT } from '@/services/translators/providers/llm';
 
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 
@@ -20,8 +21,13 @@ const LLMTranslationPanel: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState(llmCfg?.baseUrl ?? 'https://openrouter.ai/api/v1');
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
+  const [systemPrompt, setSystemPrompt] = useState(llmCfg?.systemPrompt ?? '');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const handleResetPrompt = () => {
+    setSystemPrompt('');
+  };
 
   const providerDefaults: Record<string, { baseUrl: string; apiPath: string; model: string }> = {
     openrouter: { baseUrl: 'https://openrouter.ai/api/v1', apiPath: '/chat/completions', model: '' },
@@ -48,16 +54,30 @@ const LLMTranslationPanel: React.FC = () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, apiPath, model },
+      llm: {
+        provider: provider as LLMConfig['provider'],
+        apiKey,
+        baseUrl,
+        apiPath,
+        model,
+        ...(systemPrompt ? { systemPrompt } : {}),
+      },
     };
     setSettings(updated);
-  }, [provider, apiKey, baseUrl, apiPath, model]);
+  }, [provider, apiKey, baseUrl, apiPath, model, systemPrompt]);
 
   const handleSave = async () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: { provider: provider as LLMConfig['provider'], apiKey, baseUrl, apiPath, model },
+      llm: {
+        provider: provider as LLMConfig['provider'],
+        apiKey,
+        baseUrl,
+        apiPath,
+        model,
+        ...(systemPrompt ? { systemPrompt } : {}),
+      },
     };
     setSettings(updated);
     await saveSettings(envConfig, updated);
@@ -183,6 +203,25 @@ const LLMTranslationPanel: React.FC = () => {
           onChange={(e) => setModel(e.target.value)}
           placeholder='gpt-4o-mini'
         />
+      </div>
+
+      <div className='flex flex-col gap-2 py-3 pe-4'>
+        <div className='flex items-center justify-between'>
+          <SettingLabel>{_('System Prompt')}</SettingLabel>
+          <button className='btn btn-ghost btn-xs text-xs' onClick={handleResetPrompt}>
+            {_('Reset to Default')}
+          </button>
+        </div>
+        <textarea
+          className='textarea textarea-bordered textarea-sm w-full font-mono text-xs leading-relaxed'
+          rows={6}
+          value={systemPrompt || DEFAULT_LLM_SYSTEM_PROMPT}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          placeholder={DEFAULT_LLM_SYSTEM_PROMPT}
+        />
+        <p className='text-xs opacity-60'>
+          {_('Use {targetLang} for target language, {text} for input text.')}
+        </p>
       </div>
 
       <SettingsRow label={''}>

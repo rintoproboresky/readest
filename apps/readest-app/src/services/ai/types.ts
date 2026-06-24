@@ -48,6 +48,7 @@ export interface AISettings {
     baseUrl: string;
     apiPath?: string;
     model: string;
+    systemPrompt?: string;
   };
 
   /**

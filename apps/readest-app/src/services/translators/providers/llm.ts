@@ -1,6 +1,9 @@
 import { TranslationProvider } from '../types';
 
-export const PROMPT_VERSION = 'v1';
+export const PROMPT_VERSION = 'v2';
+
+export const DEFAULT_LLM_SYSTEM_PROMPT =
+  'You are a translator. Translate text to {targetLang} naturally.';
 
 export interface LLMConfig {
   provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
@@ -8,6 +11,7 @@ export interface LLMConfig {
   baseUrl: string;
   apiPath?: string;
   model: string;
+  systemPrompt?: string;
 }
 
 let _config: LLMConfig | null = null;
@@ -24,7 +28,15 @@ export function resetLLMConfig() {
   _config = null;
 }
 
+function fillPrompt(template: string, text: string, targetLang: string): string {
+  return template.replace(/\{text\}/g, text).replace(/\{targetLang\}/g, targetLang);
+}
+
 function buildPrompt(text: string, targetLang: string): string {
+  const cfg = _config;
+  if (cfg?.systemPrompt) {
+    return fillPrompt(cfg.systemPrompt, text, targetLang);
+  }
   return [
     `Translate the following text to ${targetLang} naturally.`,
     'Rules:',
@@ -69,10 +81,14 @@ async function translateBatch(
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
+          const systemContent = cfg.systemPrompt
+            ? fillPrompt(cfg.systemPrompt, text, targetLang)
+            : `You are a translator. Translate text to ${targetLang} naturally.`;
+
           const messages = [
             {
               role: 'system',
-              content: `You are a translator. Translate text to ${targetLang} naturally.`,
+              content: systemContent,
             },
             {
               role: 'user',

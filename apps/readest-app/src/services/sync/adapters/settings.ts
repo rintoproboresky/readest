@@ -67,6 +67,7 @@ export const SETTINGS_WHITELIST = [
   'aiSettings.llm.baseUrl',
   'aiSettings.llm.apiPath',
   'aiSettings.llm.model',
+  'aiSettings.llm.systemPrompt',
 ] as const;
 
 /**
