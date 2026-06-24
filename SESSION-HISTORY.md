@@ -373,6 +373,59 @@ Configure custom domain `readest-cloud.my.id` and setup Cloudflare Tunnel to exp
 
 ---
 
+## Session 9 — 2026-06-24
+
+### Goal
+Fix CORS errors on Tauri APK connecting to self-hosted API, and run comprehensive security audit.
+
+### Work Summary
+
+#### Created
+- `docker/volumes/api/kong.yml` — Added `readest-app` service with route `/api/` → `client:3000` + `cors` plugin
+
+#### Edited
+- `apps/readest-app/src/middleware.ts` — `http://tauri.localhost` already in whitelist (verified)
+- `docker/compose.yaml` — Removed `entrypoint` override for client (was `node apps/readest-app/server.js`, bypassing `start.mjs`)
+- `start.mjs` — Removed `access-control-allow-origin: '*'` hardcode
+- `docker/compose.yaml` — MinIO ports restricted to `127.0.0.1:9000:9000` / `127.0.0.1:9001:9001`
+- `apps/readest-app/src/pages/api/kosync.ts` — Added `validateUserAndToken` auth check
+- `apps/readest-app/.gitignore` — Added `.env` and `.env.tauri` to prevent accidental commits
+- `AGENTS.md` — Added CORS & Kong Routing section, Security Rules section
+
+#### Deleted
+- `apps/readest-app/.env` — Removed from git tracking (`git rm --cached`)
+- `apps/readest-app/.env.tauri` — Removed from git tracking (`git rm --cached`)
+
+#### Deployed / Tested
+- Built custom Docker image on VPS with local code (middleware + start.mjs)
+- Restarted Kong to load new `/api/` route configuration
+- Resolved divergent git state on VPS, restored `.env` after `reset --hard`
+- Verified CORS preflight passes via `https://api.readest-cloud.my.id`
+- Verified APK successfully loads books (user confirmed)
+
+#### Key Decisions
+- Kong `readest-app` route uses only `cors` plugin (no `key-auth`) — Next.js API handles its own auth via JWT
+- `.env` still kept on disk (needed for Docker build) but untracked by git
+- Secret keys (`SERVICE_ROLE_KEY`, `JWT_SECRET`) are only in `docker/.env`, never tracked
+
+#### Next Steps
+1. APK should now work without CORS errors
+2. Future builds must use `docker compose -f docker/compose.yaml -f docker/compose.build.yaml up -d --build client` (not `pull` from upstream)
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `docker/volumes/api/kong.yml` | Edit |
+| `docker/compose.yaml` | Edit |
+| `start.mjs` | Edit |
+| `apps/readest-app/src/pages/api/kosync.ts` | Edit |
+| `apps/readest-app/.gitignore` | Edit |
+| `apps/readest-app/.env` | Delete (git) |
+| `apps/readest-app/.env.tauri` | Delete (git) |
+| `AGENTS.md` | Edit |
+
+---
+
 ## Format Template for Next Sessions
 
 ```markdown
@@ -405,4 +458,42 @@ Configure custom domain `readest-cloud.my.id` and setup Cloudflare Tunnel to exp
 | File | Action |
 |------|--------|
 | `<path>` | Create/Edit/Delete |
+```
+
+## Session 2 — 2026-06-23
+
+### Goal
+Build Android APK (`app-universal-debug.apk`) with VPS URL (`api.readest-cloud.my.id`) instead of `web.readest.com`.
+
+### Key Discoveries
+
+#### 1. APK had stale `_next/` files
+The `assets/_next/` directory (stale, 9:58 PM) contained old `web.readest.com` URLs, while `assets/www/_next/` (correct, 10:31 PM) had `api.readest-cloud.my.id`. The webview loads from `assets/www/index.html` but resolves `/_next/static/chunks/...` relative to `assets/_next/` (parent, stale). This was why the old APK had the correct UI but connected to the wrong API.
+
+#### 2. AGP's `aaptOptions.ignoreAssetsPattern` excludes `_*` directories
+Discovered that AGP's default `aaptOptions.ignoreAssetsPattern` includes `<dir>_*` which excludes all directories starting with `_`. This prevented `_next/` from being included in the asset merge (`mergeUniversalDebugAssets`), even though it existed in `app/src/main/assets/`.
+
+**Fix:** Override `ignoreAssetsPattern` in `app/build.gradle.kts`:
+```kotlin
+aaptOptions {
+    ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+}
+```
+(Removed `<dir>_*` from the default pattern.)
+
+#### 3. `tauri android build` fails on Windows due to symlinks
+`cargo_mobile2` tries to symlink `libreadestlib.so` from `target/` to `jniLibs/`, which fails on Windows without Developer Mode. Workaround: manually copy the `.so` and run Gradle with `-x rustBuild*Debug` to skip the broken Rust build tasks.
+
+#### 4. Rust build tasks broken after `gradlew clean`
+The Gradle `rustBuild*` tasks invoke `tauri android android-studio-script`, which calls `read_options()` — reads a temp file (`com.bilingify.readest-server-addr`) and connects via WebSocket. This file only exists when running `tauri android dev`. After `clean`, the Gradle build panics. The build must use `-x rustBuildArm64Debug -x rustBuildArmDebug -x rustBuildX86Debug -x rustBuildX86_64Debug` to skip these.
+
+### Result
+APK built successfully with `api.readest-cloud.my.id` in 178 chunk JS files.
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `src-tauri/gen/android/app/build.gradle.kts` | Edit (added `aaptOptions` override) |
+| `out/` | Regenerated via `pnpm build` |
+| `src-tauri/gen/android/app/src/main/assets/` | Updated with correct `_next/` |
 ```
