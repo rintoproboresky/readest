@@ -378,6 +378,9 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
     // preserves it when the remote updates the synced sub-fields.
     out.dictionarySettings = { ...current.dictionarySettings, ...patch.dictionarySettings };
   }
+  if (patch.aiSettings) {
+    out.aiSettings = { ...current.aiSettings, ...patch.aiSettings };
+  }
   return out;
 };
 

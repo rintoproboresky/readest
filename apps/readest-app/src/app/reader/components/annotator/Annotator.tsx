@@ -156,7 +156,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     color: string;
   } | null>(null);
   const [showLLMInsightPopup, setShowLLMInsightPopup] = useState(false);
-  const [llmInsightWord, setLlmInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string } | null>(null);
+  const [llmInsightWord, setLlmInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string } | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -378,13 +378,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleSaveTranslation = useCallback(
-    (text: string, translation: string, transStyle?: string, transColor?: string) => {
-      if (!selection?.cfi) return;
+    (text: string, translation: string, transStyle?: string, transColor?: string, cfi?: string) => {
+      const noteCfi = cfi ?? selection?.cfi;
+      if (!noteCfi) return;
       const config = getConfig(bookKey);
       if (!config) return;
 
       const existing = config.booknotes?.find(
-        (n) => n.type === 'translation' && n.cfi === selection.cfi && !n.deletedAt,
+        (n) => n.type === 'translation' && n.cfi === noteCfi && !n.deletedAt,
       );
       if (existing) {
         existing.translation = translation;
@@ -395,7 +396,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         const note: BookNote = {
           id: uniqueId(),
           type: 'translation',
-          cfi: selection.cfi,
+          cfi: noteCfi,
           text,
           translation,
           note: '',
@@ -1465,6 +1466,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       text: selection.text,
       sourceLang: primaryLang,
       targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
+      cfi: selection.cfi,
     });
     setShowLLMInsightPopup(true);
   };
@@ -1976,6 +1978,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               text: translationNoteData.text,
               sourceLang: primaryLang,
               targetLang: settings.globalReadSettings.translateTargetLang || getUserLang(),
+              cfi: translationNoteData.cfi,
             });
             setShowLLMInsightPopup(true);
           }}
@@ -1991,6 +1994,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           width={transPopupWidth}
           height={Math.min(360, maxHeight)}
           onDismiss={handleDismissPopupAndSelection}
+          onSelectAlternative={(translation) => {
+            if (llmInsightWord) {
+              const cfi = llmInsightWord.cfi ?? selection?.cfi;
+              if (cfi) {
+                handleSaveTranslation(llmInsightWord.text, translation, cfi);
+              }
+            }
+          }}
         />
       )}
       {!editingAnnotation && selection?.handlesSuppressed && selection.range && (
