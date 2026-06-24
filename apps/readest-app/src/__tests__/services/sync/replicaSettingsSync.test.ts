@@ -249,7 +249,7 @@ describe('publishSettingsIfChanged', () => {
     };
 
     test('does NOT trigger the passphrase gate when credentials sync is OFF and a kosync password is set', async () => {
-      await setCredentials(undefined); // default OFF
+      await setCredentials(false);
       isUnlocked = false;
       await publishSettingsIfChanged(
         makeSettings({
@@ -265,7 +265,7 @@ describe('publishSettingsIfChanged', () => {
     });
 
     test('omits all credential paths from the patch when credentials sync is OFF', async () => {
-      await setCredentials(undefined);
+      await setCredentials(false);
       isUnlocked = false;
       await publishSettingsIfChanged(
         makeSettings({
@@ -318,7 +318,7 @@ describe('publishSettingsIfChanged', () => {
     });
 
     test('skipping all of the only-credential changes is a clean no-op (no empty publish)', async () => {
-      await setCredentials(undefined);
+      await setCredentials(false);
       isUnlocked = false;
       // Prime the snapshot so the first publish drains everything.
       await publishSettingsIfChanged(makeSettings());

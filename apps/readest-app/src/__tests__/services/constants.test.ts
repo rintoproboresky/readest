@@ -997,10 +997,11 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_STORAGE_QUOTA.purchase).toBe('number');
     });
 
-    it('DEFAULT_STORAGE_QUOTA tiers are in ascending order (except purchase)', () => {
+    it('DEFAULT_STORAGE_QUOTA all tiers are set to a large value (self-hosted unlimited)', () => {
       expect(DEFAULT_STORAGE_QUOTA.free).toBeGreaterThan(0);
-      expect(DEFAULT_STORAGE_QUOTA.plus).toBeGreaterThan(DEFAULT_STORAGE_QUOTA.free);
-      expect(DEFAULT_STORAGE_QUOTA.pro).toBeGreaterThan(DEFAULT_STORAGE_QUOTA.plus);
+      expect(DEFAULT_STORAGE_QUOTA.plus).toBeGreaterThan(0);
+      expect(DEFAULT_STORAGE_QUOTA.pro).toBeGreaterThan(0);
+      expect(DEFAULT_STORAGE_QUOTA.purchase).toBeGreaterThan(0);
     });
 
     it('DEFAULT_DAILY_TRANSLATION_QUOTA has all plan tiers', () => {
@@ -1011,14 +1012,11 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_DAILY_TRANSLATION_QUOTA.purchase).toBe('number');
     });
 
-    it('DEFAULT_DAILY_TRANSLATION_QUOTA tiers are in ascending order (except purchase)', () => {
+    it('DEFAULT_DAILY_TRANSLATION_QUOTA all tiers are set to a large value (self-hosted unlimited)', () => {
       expect(DEFAULT_DAILY_TRANSLATION_QUOTA.free).toBeGreaterThan(0);
-      expect(DEFAULT_DAILY_TRANSLATION_QUOTA.plus).toBeGreaterThan(
-        DEFAULT_DAILY_TRANSLATION_QUOTA.free,
-      );
-      expect(DEFAULT_DAILY_TRANSLATION_QUOTA.pro).toBeGreaterThan(
-        DEFAULT_DAILY_TRANSLATION_QUOTA.plus,
-      );
+      expect(DEFAULT_DAILY_TRANSLATION_QUOTA.plus).toBeGreaterThan(0);
+      expect(DEFAULT_DAILY_TRANSLATION_QUOTA.pro).toBeGreaterThan(0);
+      expect(DEFAULT_DAILY_TRANSLATION_QUOTA.purchase).toBeGreaterThan(0);
     });
   });
 

@@ -3,7 +3,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import {
-  getDailyTranslationPlanData,
   getSubscriptionPlan,
   validateUserAndToken,
 } from '@/utils/access';
@@ -40,13 +39,7 @@ const generateCacheKey = (text: string, sourceLang: string, targetLang: string):
 };
 
 const checkDailyUsage = async (userId: string, token: string, chars: number) => {
-  const { quota: dailyQuota } = getDailyTranslationPlanData(token);
-  const dailyUsage = await UsageStatsManager.getCurrentUsage(userId, 'translation_chars', 'daily');
-
-  if (dailyQuota <= dailyUsage + chars) {
-    throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);
-  }
-  return dailyUsage;
+  return 0;
 };
 
 const updateDailyUsage = async (

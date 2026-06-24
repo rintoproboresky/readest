@@ -358,9 +358,8 @@ describe('publishReplicaUpsert credentials gate', () => {
     cryptoMocks.encryptField.mockImplementation(async (v: string) => ({ v, kdf: 'mock' }));
   });
 
-  test('drops encryptedFields from the packed row when credentials sync is OFF (default)', async () => {
-    // No syncCategories map at all → credentials defaults OFF.
-    await setCredentialsCategory(undefined);
+  test('drops encryptedFields from the packed row when credentials sync is OFF', async () => {
+    await setCredentialsCategory(false);
     const { opdsCatalogAdapter } = await import('@/services/sync/adapters/opdsCatalog');
     registerReplicaAdapter(opdsCatalogAdapter);
     const ctx = makeFakeCtx();

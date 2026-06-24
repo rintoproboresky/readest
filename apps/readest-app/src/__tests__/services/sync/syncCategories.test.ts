@@ -105,28 +105,25 @@ describe('isSyncCategoryEnabled', () => {
     });
   });
 
-  describe('credentials category', () => {
-    test('defaults to OFF when settings are not loaded', () => {
-      // Unique among categories: credentials must be opt-in, so the
-      // default for an absent map / missing key is false rather than the
-      // global "missing key → on" default.
-      expect(isSyncCategoryEnabled('credentials')).toBe(false);
-      expect(isCredentialsSyncEnabled()).toBe(false);
+  describe('credentials category (self-hosted: ON by default)', () => {
+    test('defaults to ON when settings are not loaded', () => {
+      expect(isSyncCategoryEnabled('credentials')).toBe(true);
+      expect(isCredentialsSyncEnabled()).toBe(true);
     });
 
-    test('defaults to OFF when syncCategories map is missing', () => {
+    test('defaults to ON when syncCategories map is missing', () => {
       setSettings({});
-      expect(isSyncCategoryEnabled('credentials')).toBe(false);
-      expect(isCredentialsSyncEnabled()).toBe(false);
+      expect(isSyncCategoryEnabled('credentials')).toBe(true);
+      expect(isCredentialsSyncEnabled()).toBe(true);
     });
 
-    test('defaults to OFF when explicitly absent from a populated map', () => {
+    test('defaults to ON when explicitly absent from a populated map', () => {
       setSettings({ syncCategories: { book: true, settings: true } });
-      expect(isSyncCategoryEnabled('credentials')).toBe(false);
-      expect(isCredentialsSyncEnabled()).toBe(false);
+      expect(isSyncCategoryEnabled('credentials')).toBe(true);
+      expect(isCredentialsSyncEnabled()).toBe(true);
     });
 
-    test('returns true only when explicitly opted in', () => {
+    test('returns true when explicitly opted in', () => {
       setSettings({ syncCategories: { credentials: true } });
       expect(isSyncCategoryEnabled('credentials')).toBe(true);
       expect(isCredentialsSyncEnabled()).toBe(true);

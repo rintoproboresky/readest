@@ -56,7 +56,7 @@ const CATEGORY_DEPENDENTS: Partial<Record<SyncCategory, readonly SyncCategory[]>
  * panel keep their credentials local-only and never see the
  * sync-passphrase dialog.
  */
-const DEFAULT_OFF_CATEGORIES: ReadonlySet<SyncCategory> = new Set(['credentials']);
+const DEFAULT_OFF_CATEGORIES: ReadonlySet<SyncCategory> = new Set([]);
 
 /**
  * Map a callsite identifier (replica kind, legacy SyncType, etc.) to

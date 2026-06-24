@@ -106,7 +106,7 @@ describe('validatePushBatch', () => {
   });
 
   test('rejects row with HLC outside skew tolerance', () => {
-    const farFuture = hlcPack(NOW + 1_000_000, 0, 'd') as Hlc;
+    const farFuture = hlcPack(NOW + HLC_SKEW_TOLERANCE_MS + 1, 0, 'd') as Hlc;
     const result = validatePushBatch({ rows: [baseRow({ updated_at_ts: farFuture })] }, USER, NOW);
     expect(result.ok).toBe(false);
     if (!result.ok) {

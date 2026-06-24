@@ -477,8 +477,8 @@ describe('replicaPullAndApply credentials category gate (opds adapter)', () => {
     useSettingsStore.setState({ settings: undefined as unknown as SystemSettings } as never);
   });
 
-  test('strips cipher fields and never prompts when credentials sync is OFF (default)', async () => {
-    setCredentialsCategory(undefined); // default OFF
+  test('strips cipher fields and never prompts when credentials sync is OFF', async () => {
+    setCredentialsCategory(false);
     const deps = makeOpdsDeps();
     (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([opdsRow()]);
 

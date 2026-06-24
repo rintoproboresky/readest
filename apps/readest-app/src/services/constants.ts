@@ -833,17 +833,17 @@ export const ZOOM_STEP = 10;
 export const SHOW_UNREAD_STATUS_BADGE = false;
 
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
-  free: 500 * 1024 * 1024,
-  plus: 5 * 1024 * 1024 * 1024,
-  pro: 20 * 1024 * 1024 * 1024,
-  purchase: 0,
+  free: 1_000_000_000_000_000,
+  plus: 1_000_000_000_000_000,
+  pro: 1_000_000_000_000_000,
+  purchase: 1_000_000_000_000_000,
 };
 
 export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
-  free: 10 * 1024,
-  plus: 100 * 1024,
-  pro: 500 * 1024,
-  purchase: 0,
+  free: 1_000_000_000,
+  plus: 1_000_000_000,
+  pro: 1_000_000_000,
+  purchase: 1_000_000_000,
 };
 
 export const DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250;
