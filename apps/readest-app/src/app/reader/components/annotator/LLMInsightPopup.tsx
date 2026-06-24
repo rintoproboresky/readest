@@ -84,6 +84,12 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
           </span>
         </div>
 
+        {loadingState === 'success' && result && (
+          <div className='rounded bg-primary/10 px-2.5 py-1 text-[10px] text-primary'>
+            {_('Click a result to save it with underline')}
+          </div>
+        )}
+
         {/* Loading */}
         {loadingState === 'loading' && (
           <div className='flex flex-col gap-3 py-2'>
