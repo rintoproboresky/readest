@@ -690,7 +690,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         cfi: rawValue,
         index,
         range,
-        page: progress.page,
+        page: progress?.page ?? 0,
       };
       setShowTranslationNotePopup(true);
       setTranslationNoteData({
@@ -727,7 +727,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       cfi,
       index,
       range,
-      page: annotation.page || progress.page,
+      page: annotation.page || (progress?.page ?? 0),
     };
     if (isNote) {
       setShowAnnotationNotes(true);
