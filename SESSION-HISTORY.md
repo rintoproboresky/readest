@@ -497,3 +497,60 @@ APK built successfully with `api.readest-cloud.my.id` in 178 chunk JS files.
 | `out/` | Regenerated via `pnpm build` |
 | `src-tauri/gen/android/app/src/main/assets/` | Updated with correct `_next/` |
 ```
+
+## Session 3 — 2026-06-24
+
+### Goal
+Add configurable `apiPath` field for LLM translation to support non-standard OpenAI-compatible endpoints (e.g., z.ai).
+
+### Work Summary
+
+#### Edited
+- `src/services/ai/types.ts` — Added `apiPath?: string` to `AISettings.llm` and `LLMConfig`
+- `src/services/ai/constants.ts` — Added default `apiPath: '/chat/completions'`
+- `src/services/translators/providers/llm.ts` — Sends `apiPath` in request body to server
+- `src/pages/api/llm/translate.ts` — Server constructs URL as `baseUrl + apiPath`
+- `src/components/settings/llm/LLMTranslationPanel.tsx` — Added "API Path" text field with provider presets
+- `src/__tests__/services/translators/providers/llm.test.ts` — Updated test config and assertions
+
+#### Key Decisions
+- Separate `apiPath` field instead of modifying base URL — backward compatible
+- Default `apiPath = '/v1/chat/completions'` on server fallback, presets use `/chat/completions`
+- All 25 existing tests pass
+
+## Session 4 — 2026-06-24
+
+### Goal
+Set up GitHub Actions CI for automated Android APK builds for the self-hosted fork.
+
+### Work Summary
+
+#### Created
+- `.github/workflows/build-apk.yml` — CI workflow to build debug APK on push to `main`
+
+#### Key Issues & Fixes
+1. **`atob` build failure** — `.env.tauri` values had quotes causing `dotenv` parse issues. Fix: write clean base64 values directly via heredoc in `.env.local`
+2. **Books not syncing in APK** — `NEXT_PUBLIC_API_BASE_URL` not set in CI build, causing APK to hit `web.readest.com` instead of `api.readest-cloud.my.id`. Fix: added to `.env.local`
+3. **`turso_sdk_kit` v0.6.1 cross-compile bug** — `-ladvapi32` linker error on Windows. Workaround: stub `libadvapi32.so`. Resolution: build via Linux CI (no Windows cross-compile issues)
+
+#### Result
+- GitHub Actions builds debug APK (~12 min) on every push to `main`
+- APK connects to self-hosted Supabase at `readest-cloud.my.id`
+- Books sync correctly between web and Android
+- APK available as downloadable artifact for 30 days
+
+#### Remaining
+- **Release build** — needs keystore setup for smaller APK size + in-place updates
+- **Other CI workflows** — `vercel-merge`, `docker-image`, `PR checks` fail because fork lacks upstream secrets (harmless)
+
+#### Relevant Files
+| File | Action |
+|------|--------|
+| `.github/workflows/build-apk.yml` | Created (82 lines) |
+| `apps/readest-app/src/services/ai/types.ts` | Edit (apiPath) |
+| `apps/readest-app/src/services/ai/constants.ts` | Edit (apiPath default) |
+| `apps/readest-app/src/services/translators/providers/llm.ts` | Edit (apiPath) |
+| `apps/readest-app/src/pages/api/llm/translate.ts` | Edit (apiPath) |
+| `apps/readest-app/src/components/settings/llm/LLMTranslationPanel.tsx` | Edit (apiPath UI) |
+| `apps/readest-app/src/__tests__/services/translators/providers/llm.test.ts` | Edit (apiPath tests) |
+```
