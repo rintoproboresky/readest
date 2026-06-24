@@ -108,12 +108,15 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
         {loadingState === 'success' && result && (
           <>
             {/* Main Translation */}
-            <div className='rounded-md bg-base-200/50 px-3 py-2'>
+            <button
+              className='w-full rounded-md bg-base-200/50 px-3 py-2 text-left transition-colors hover:bg-base-200/80'
+              onClick={() => onSelectAlternative?.(result.mainTranslation)}
+            >
               <span className='text-base-content/50 text-xs font-medium'>{_('Most likely')}</span>
               <div className='text-base-content text-sm font-semibold'>
                 {result.mainTranslation}
               </div>
-            </div>
+            </button>
 
             {/* Alternatives */}
             {result.alternatives.length > 0 && (
