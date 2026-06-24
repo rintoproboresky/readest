@@ -34,6 +34,13 @@ Fork dari [readest/readest](https://github.com/readest/readest) — cross-platfo
 - `git commit --no-verify` — skip pre-commit hooks (CRLF biome formatter errors)
 - `git push origin main --no-verify` — skip pre-push hooks
 - Semua perubahan di-commit ke branch `main`, push ke `origin/main`
+- **JANGAN commit file `.env`**, `.env.tauri`, atau file credentials lainnya — sudah di `.gitignore`, tapi pastikan `git add` pilih-pilih file yang aman
+
+## Security Rules (WAJIB dipatuhi agent)
+- `.env`, `.env.tauri`, dan `docker/.env` mengandung secrets — JANGAN pernah commit atau expose
+- `SERVICE_ROLE_KEY`, `JWT_SECRET`, `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD` hanya ada di `docker/.env` — jangan pernah pindahin ke file yang trackable
+- Kalo ada file baru yang mengandung credentials, langsung tambah ke `.gitignore` sebelum commit
+- `git status` selalu dicek sebelum `git add` untuk memastikan ga ada file sensitif yang ke-stage
 
 ## Compression Proxy (start.mjs)
 - Next.js 16 tidak lagi include built-in `compress` middleware di standalone output
