@@ -142,8 +142,8 @@ export function getPlanDetails(
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '500 MB',
-          [_('AI Translations (per day)')]: '10K',
+          [_('Cloud Sync Storage')]: _('Unlimited'),
+          [_('AI Translations (per day)')]: _('Unlimited'),
         },
       };
     case 'plus':
@@ -193,8 +193,8 @@ export function getPlanDetails(
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '5 GB',
-          [_('AI Translations (per day)')]: '100K',
+          [_('Cloud Sync Storage')]: _('Unlimited'),
+          [_('AI Translations (per day)')]: _('Unlimited'),
         },
       };
     case 'pro':
@@ -238,8 +238,8 @@ export function getPlanDetails(
           },
         ],
         limits: {
-          [_('Cloud Sync Storage')]: '20 GB',
-          [_('AI Translations (per day)')]: '500K',
+          [_('Cloud Sync Storage')]: _('Unlimited'),
+          [_('AI Translations (per day)')]: _('Unlimited'),
         },
       };
     default:

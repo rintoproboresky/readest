@@ -20,39 +20,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
 }) => {
   const _ = useTranslation();
 
-  if (upgradable && plan.plan !== 'free' && !isUserPlan) {
-    if (comingSoon) {
-      return (
-        <button
-          disabled
-          className='w-full cursor-default rounded-lg bg-gray-200 px-6 py-3 font-semibold text-gray-500'
-        >
-          {_('Coming Soon')}
-        </button>
-      );
-    }
-    return (
-      <button
-        onClick={() => onSubscribe(plan.productId)}
-        className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
-      >
-        {_('Upgrade to {{plan}}', { plan: _(plan.name) })}
-      </button>
-    );
-  }
-
-  if (plan.plan === 'free' && isUserPlan) {
-    return (
-      <button
-        onClick={() => onSelectPlan(1)}
-        className='w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700'
-      >
-        {_('Upgrade to Plus or Pro')}
-      </button>
-    );
-  }
-
-  if (isUserPlan) {
+  if (isUserPlan || plan.plan === 'free') {
     return (
       <button
         disabled
@@ -63,7 +31,14 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
     );
   }
 
-  return null;
+  return (
+    <button
+      disabled
+      className='w-full cursor-default rounded-lg bg-gray-200 px-6 py-3 font-semibold text-gray-500'
+    >
+      {_('Coming Soon')}
+    </button>
+  );
 };
 
 export default PlanActionButton;

@@ -171,10 +171,7 @@ export default function AuthPage() {
       const refreshToken = params.get('refresh_token');
       const type = params.get('type');
       if (accessToken) {
-        let next = params.get('next') ?? '/';
-        if (getUserProfilePlan(accessToken) === 'free') {
-          next = '/user';
-        }
+        const next = params.get('next') ?? '/';
         handleAuthCallback({ accessToken, refreshToken, type, next, login, navigate: router.push });
       }
     }

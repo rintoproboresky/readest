@@ -152,9 +152,9 @@ describe('getPlanDetails', () => {
       expect(proStorageKey).toBeDefined();
       expect(plusStorageKey).toBeDefined();
 
-      // Pro should have 20 GB, Plus should have 5 GB
-      expect(proResult.limits![proStorageKey!]).toBe('20 GB');
-      expect(plusResult.limits![plusStorageKey!]).toBe('5 GB');
+      // Self-hosted: all plans show Unlimited
+      expect(proResult.limits![proStorageKey!]).toBe('Unlimited');
+      expect(plusResult.limits![plusStorageKey!]).toBe('Unlimited');
     });
   });
 
