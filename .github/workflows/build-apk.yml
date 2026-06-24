@@ -54,10 +54,15 @@ jobs:
         with:
           key: android-aarch64-cargo
 
-      - name: create .env.local file
+      - name: create .env.local file (bypass dotenv quote issues)
         run: |
-          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
-          cp .env.local apps/readest-app/.env.local
+          cat >> apps/readest-app/.env.local << 'ENVEOF'
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64=aHR0cHM6Ly9hcGkucmVhZGVzdC1jbG91ZC5teS5pZA==
+          NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64=ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnliMnhsSWpvaVlXNXZiaUo5LlAwTTJfR1dVTm5laXdqVUdqakFkR3VYLXJpV0ltRWR3YWlsa2x0bUIxb0E=
+          NEXT_PUBLIC_DEFAULT_POSTHOG_URL_BASE64=aHR0cHM6Ly91cy5pLnBvc3Rob2cuY29t
+          NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64=cGhjX0x3ekhZRWtsZUVub3ZSc05ZQlRpTVRTV2MyS1NUOFdZMzBIWWFhN0ZPa1IK
+          ENVEOF
 
       - name: build debug APK (aarch64)
         env:
