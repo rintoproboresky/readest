@@ -27,7 +27,7 @@ import {
 } from './primitives';
 import CustomDictionaries from './CustomDictionaries';
 import WordLensPanel from './WordLensPanel';
-import LLMTranslationPanel from './llm/LLMTranslationPanel';
+
 import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -371,8 +371,6 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           />
         </SettingsRow>
       </BoxedList>
-
-      {translationProvider === 'llm' && <LLMTranslationPanel />}
 
       {(isCJKEnv() || view?.language.isCJK) && (
         <BoxedList title={_('Punctuation')} data-setting-id='settings.language.quotationMarks'>

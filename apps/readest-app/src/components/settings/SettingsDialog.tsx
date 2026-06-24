@@ -11,6 +11,7 @@ import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
+import { LuBrain } from 'react-icons/lu';
 import {
   MdArrowBackIosNew,
   MdArrowForwardIos,
@@ -33,6 +34,7 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
+import LLMInsightPanel from './llm/LLMInsightPanel';
 
 export type SettingsPanelType =
   | 'Font'
@@ -43,6 +45,7 @@ export type SettingsPanelType =
   | 'Language'
   | 'AI'
   | 'Integrations'
+  | 'Insight'
   | 'Custom';
 export type SettingsPanelPanelProp = {
   bookKey: string;
@@ -110,6 +113,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       tab: 'Integrations',
       icon: RiShareLine,
       label: _('Integrations'),
+    },
+    {
+      tab: 'Insight',
+      icon: LuBrain,
+      label: _('Word Insight'),
     },
     {
       tab: 'AI',
@@ -180,6 +188,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     Language: null,
     AI: null,
     Integrations: null,
+    Insight: null,
     Custom: null,
   });
 
@@ -473,8 +482,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           />
         )}
         {activePanel === 'AI' && <AIPanel />}
-        {activePanel === 'Integrations' && <IntegrationsPanel />}
-        {activePanel === 'Custom' && (
+{activePanel === 'Integrations' && <IntegrationsPanel />}
+{activePanel === 'Insight' && <LLMInsightPanel />}
+{activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}
             onRegisterReset={(fn) => registerResetFunction('Custom', fn)}

@@ -5,12 +5,11 @@ import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
-import type { LLMConfig } from '@/services/translators/providers/llm';
-import { DEFAULT_LLM_SYSTEM_PROMPT } from '@/services/translators/providers/llm';
 
+type LLMProvider = 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 
-const LLMTranslationPanel: React.FC = () => {
+const LLMInsightPanel: React.FC = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
@@ -21,30 +20,21 @@ const LLMTranslationPanel: React.FC = () => {
   const [baseUrl, setBaseUrl] = useState(llmCfg?.baseUrl ?? 'https://openrouter.ai/api/v1');
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
-  const [systemPrompt, setSystemPrompt] = useState(llmCfg?.systemPrompt ?? '');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Sync local state from store once after settings load asynchronously.
-  // Prevents useStates initialized with '' (before store resolves) from
-  // overwriting the store via the write-effect below.
   const syncedFromStore = useRef(false);
 
   useEffect(() => {
     if (!llmCfg) return;
     if (syncedFromStore.current) return;
     syncedFromStore.current = true;
-    if (llmCfg.provider) setProvider(llmCfg.provider as LLMConfig['provider']);
+    if (llmCfg.provider) setProvider(llmCfg.provider as LLMProvider);
     setApiKey(llmCfg.apiKey ?? '');
     setBaseUrl(llmCfg.baseUrl ?? 'https://openrouter.ai/api/v1');
     setApiPath(llmCfg.apiPath ?? '/chat/completions');
     setModel(llmCfg.model ?? '');
-    setSystemPrompt(llmCfg.systemPrompt ?? '');
   }, [llmCfg]);
-
-  const handleResetPrompt = () => {
-    setSystemPrompt('');
-  };
 
   const providerDefaults: Record<string, { baseUrl: string; apiPath: string; model: string }> = {
     openrouter: { baseUrl: 'https://openrouter.ai/api/v1', apiPath: '/chat/completions', model: '' },
@@ -57,7 +47,7 @@ const LLMTranslationPanel: React.FC = () => {
   };
 
   const handleProviderChange = (value: string) => {
-    setProvider(value as LLMConfig['provider']);
+    setProvider(value as LLMProvider);
     const preset = providerDefaults[value];
     if (preset) {
       setBaseUrl(preset.baseUrl);
@@ -73,28 +63,26 @@ const LLMTranslationPanel: React.FC = () => {
     updated.aiSettings = {
       ...updated.aiSettings,
       llm: {
-        provider: provider as LLMConfig['provider'],
+        provider: provider as LLMProvider,
         apiKey,
         baseUrl,
         apiPath,
         model,
-        ...(systemPrompt ? { systemPrompt } : {}),
       },
     };
     setSettings(updated);
-  }, [provider, apiKey, baseUrl, apiPath, model, systemPrompt]);
+  }, [provider, apiKey, baseUrl, apiPath, model]);
 
   const handleSave = async () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
       llm: {
-        provider: provider as LLMConfig['provider'],
+        provider: provider as LLMProvider,
         apiKey,
         baseUrl,
         apiPath,
         model,
-        ...(systemPrompt ? { systemPrompt } : {}),
       },
     };
     setSettings(updated);
@@ -120,7 +108,7 @@ const LLMTranslationPanel: React.FC = () => {
         max_tokens: 32,
         headers: {
           'HTTP-Referer': 'readest',
-          'X-Title': 'Readest LLM Translator',
+          'X-Title': 'Readest LLM Insight',
         },
       };
 
@@ -159,7 +147,7 @@ const LLMTranslationPanel: React.FC = () => {
   };
 
   return (
-    <BoxedList title={_('LLM Translation Configuration')}>
+    <BoxedList title={_('LLM Word Insight')}>
       <SettingsRow label={_('Provider')} asLabel>
         <select
           className='select select-bordered select-sm bg-base-100 text-base-content'
@@ -223,25 +211,6 @@ const LLMTranslationPanel: React.FC = () => {
         />
       </div>
 
-      <div className='flex flex-col gap-2 py-3 pe-4'>
-        <div className='flex items-center justify-between'>
-          <SettingLabel>{_('System Prompt')}</SettingLabel>
-          <button className='btn btn-ghost btn-xs text-xs' onClick={handleResetPrompt}>
-            {_('Reset to Default')}
-          </button>
-        </div>
-        <textarea
-          className='textarea textarea-bordered textarea-sm w-full font-mono text-xs leading-relaxed'
-          rows={6}
-          value={systemPrompt || DEFAULT_LLM_SYSTEM_PROMPT}
-          onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder={DEFAULT_LLM_SYSTEM_PROMPT}
-        />
-        <p className='text-xs opacity-60'>
-          {_('Use {targetLang} for target language, {text} for input text.')}
-        </p>
-      </div>
-
       <SettingsRow label={''}>
         <div className='flex items-center gap-2'>
           <button
@@ -266,4 +235,4 @@ const LLMTranslationPanel: React.FC = () => {
   );
 };
 
-export default LLMTranslationPanel;
+export default LLMInsightPanel;
