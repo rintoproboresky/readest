@@ -157,6 +157,17 @@ export interface BookNote {
   note: string;
   /** Saved translation result for this note (type: 'translation' only) */
   translation?: string;
+  /** Full AI Insight result with alternatives and context */
+  aiInsight?: {
+    mainTranslation: string;
+    alternatives: Array<{
+      translation: string;
+      usage: string;
+      example: string;
+      confidence: string;
+    }>;
+    note?: string;
+  };
   /**
    * If true, this annotation should be applied to every occurrence of `text`
    * within the same section (chapter/spine item), in addition to the original

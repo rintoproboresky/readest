@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
@@ -15,6 +15,7 @@ interface AIInsightPopupProps {
   height: number;
   onDismiss: () => void;
   onSelectAlternative?: (translation: string) => void;
+  onSaveFullResult?: (result: AIInsightResult) => void;
 }
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
@@ -29,6 +30,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   height,
   onDismiss,
   onSelectAlternative,
+  onSaveFullResult,
 }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
@@ -36,6 +38,15 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   const [result, setResult] = useState<AIInsightResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const autoSaved = useRef(false);
+
+  useEffect(() => {
+    if (loadingState === 'success' && result && !autoSaved.current) {
+      autoSaved.current = true;
+      onSaveFullResult?.(result);
+      onSelectAlternative?.(result.mainTranslation);
+    }
+  }, [loadingState, result, onSelectAlternative, onSaveFullResult]);
 
   const fetchInsight = async () => {
     const llmConfig = settings?.aiSettings?.llm;
@@ -87,7 +98,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
 
         {loadingState === 'success' && result && (
           <div className='rounded bg-primary/10 px-2.5 py-1 text-[10px] text-primary'>
-            {_('Click a result to save it with underline')}
+            {_('Main translation saved')}
           </div>
         )}
 

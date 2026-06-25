@@ -2,8 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
-import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
+
+interface AIInsightData {
+  mainTranslation: string;
+  alternatives: Array<{
+    translation: string;
+    usage: string;
+    example: string;
+    confidence: string;
+  }>;
+  note?: string;
+}
 
 interface TranslationNotePopupProps {
   text: string;
@@ -14,11 +24,11 @@ interface TranslationNotePopupProps {
   position: Position;
   trianglePosition: Position;
   width: number;
-  height: number;
   onDismiss: () => void;
   onSave?: (cfi: string, newTranslation: string, style?: TranslationStyle, color?: string) => void;
   onDelete?: (cfi: string) => void;
   onInsight?: () => void;
+  aiInsight?: AIInsightData;
 }
 
 const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
@@ -30,11 +40,11 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
   position,
   trianglePosition,
   width,
-  height,
   onDismiss,
   onSave,
   onDelete,
   onInsight,
+  aiInsight,
 }) => {
   const _ = useTranslation();
   const [editing, setEditing] = useState(false);
@@ -70,14 +80,11 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
     onDismiss();
   };
 
-  const colorHex = HIGHLIGHT_COLOR_HEX[initialColor] ?? initialColor;
-
   return (
     <Popup
       position={position}
       trianglePosition={trianglePosition}
       width={width}
-      height={height}
       onDismiss={() => {
         if (editing) {
           handleCancel();
@@ -103,7 +110,28 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
             )}
           </div>
         </div>
-        {editing ? (
+        {!editing && aiInsight && aiInsight.alternatives.length > 0 && (
+          <div className='flex flex-col gap-1.5'>
+            <span className='text-base-content/50 text-[10px] font-medium'>{_('Alternatives')}</span>
+            {aiInsight.alternatives.map((alt, i) => (
+              <div key={i} className='flex flex-col gap-0.5 rounded bg-base-200/30 px-2 py-1.5'>
+                <div className='flex items-center gap-1.5'>
+                  <span className='text-xs font-medium'>{alt.translation}</span>
+                  <span className='rounded bg-base-300/50 px-1 py-0.5 text-[9px] text-base-content/60'>
+                    {alt.usage}
+                  </span>
+                </div>
+                <span className='text-[10px] italic text-base-content/50'>{alt.example}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {!editing && aiInsight?.note && (
+          <div className='rounded bg-base-200/30 px-2 py-1.5'>
+            <span className='text-[10px] italic text-base-content/50'>{aiInsight.note}</span>
+          </div>
+        )}
+        {editing && (
           <div className='flex flex-col gap-2'>
             <span className='text-base-content/60 text-xs font-medium'>{_('Style')}</span>
             <TranslationStylePicker
@@ -114,16 +142,6 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
                 setEditColor(c);
               }}
             />
-          </div>
-        ) : (
-          <div className='flex items-center gap-2'>
-            <div
-              className='h-3 w-3 rounded-full'
-              style={{ backgroundColor: colorHex }}
-            />
-            <span className='text-base-content/40 text-xs'>
-              {initialStyle === 'squiggly' ? _('Squiggly') : _('Underline')}
-            </span>
           </div>
         )}
         <div className='flex items-center gap-2 border-t border-base-200 pt-2'>

@@ -154,6 +154,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     cfi: string;
     style: 'underline' | 'squiggly';
     color: string;
+    aiInsight?: BookNote['aiInsight'];
   } | null>(null);
   const [showAIInsightPopup, setShowAIInsightPopup] = useState(false);
   const [aiInsightWord, setAiInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string } | null>(null);
@@ -378,7 +379,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleSaveTranslation = useCallback(
-    (text: string, translation: string, transStyle?: string, transColor?: string, cfi?: string) => {
+    (text: string, translation: string, transStyle?: string, transColor?: string, cfi?: string, aiInsight?: BookNote['aiInsight']) => {
       const noteCfi = cfi ?? selection?.cfi;
       if (!noteCfi) return;
       const config = getConfig(bookKey);
@@ -391,6 +392,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         existing.translation = translation;
         if (transStyle) existing.style = transStyle as 'underline' | 'squiggly';
         if (transColor) existing.color = transColor;
+        if (aiInsight) existing.aiInsight = aiInsight;
         existing.updatedAt = Date.now();
       } else {
         const note: BookNote = {
@@ -402,6 +404,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           note: '',
           style: (transStyle as 'underline' | 'squiggly') || 'underline',
           color: transColor || '#0891b2',
+          aiInsight,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -700,6 +703,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         cfi: rawValue,
         style: (translation.style as 'underline' | 'squiggly') || 'underline',
         color: translation.color || '#0891b2',
+        aiInsight: translation.aiInsight,
       });
       setSelection(sel);
       handleUpToPopup();
@@ -1968,10 +1972,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           position={translationNotePopupPosition}
           trianglePosition={trianglePosition}
           width={transPopupWidth}
-          height={transPopupHeight}
           onDismiss={handleDismissPopupAndSelection}
           onSave={handleEditTranslation}
           onDelete={handleDeleteTranslation}
+          aiInsight={translationNoteData.aiInsight}
           onInsight={() => {
             setShowTranslationNotePopup(false);
             setAiInsightWord({
@@ -1999,6 +2003,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
               if (noteCfi) {
                 handleSaveTranslation(aiInsightWord.text, translation, undefined, undefined, noteCfi);
+              }
+            }
+          }}
+          onSaveFullResult={(result) => {
+            if (aiInsightWord) {
+              const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
+              if (noteCfi) {
+                handleSaveTranslation(aiInsightWord.text, result.mainTranslation, undefined, undefined, noteCfi, result);
               }
             }
           }}
