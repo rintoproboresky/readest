@@ -78,7 +78,7 @@ import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
 import TranslationNotePopup from './TranslationNotePopup';
-import LLMInsightPopup from './LLMInsightPopup';
+import AIInsightPopup from './AIInsightPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
@@ -155,14 +155,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     style: 'underline' | 'squiggly';
     color: string;
   } | null>(null);
-  const [showLLMInsightPopup, setShowLLMInsightPopup] = useState(false);
-  const [llmInsightWord, setLlmInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string } | null>(null);
+  const [showAIInsightPopup, setShowAIInsightPopup] = useState(false);
+  const [aiInsightWord, setAiInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string } | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
   const [translationNotePopupPosition, setTranslationNotePopupPosition] = useState<Position>();
-  const [llmInsightPopupPosition, setLlmInsightPopupPosition] = useState<Position>();
+  const [aiInsightPopupPosition, setAiInsightPopupPosition] = useState<Position>();
   const [proofreadPopupPosition, setProofreadPopupPosition] = useState<Position>();
   const [highlightOptionsVisible, setHighlightOptionsVisible] = useState(false);
   const [showAnnotationNotes, setShowAnnotationNotes] = useState(false);
@@ -202,7 +202,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup || showTranslationNotePopup || showLLMInsightPopup;
+    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup || showTranslationNotePopup || showAIInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -280,7 +280,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       transPopupHeight,
       popupPadding,
     );
-    const llmInsightPopupPos = getPopupPosition(
+    const aiInsightPopupPos = getPopupPosition(
       triangPos,
       rect,
       transPopupWidth,
@@ -292,7 +292,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setDictPopupPosition(dictPopupPos);
     setTranslatorPopupPosition(transPopupPos);
     setTranslationNotePopupPosition(translationNotePopupPos);
-    setLlmInsightPopupPosition(llmInsightPopupPos);
+    setAiInsightPopupPosition(aiInsightPopupPos);
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,8 +337,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setShowProofreadPopup(false);
       setShowTranslationNotePopup(false);
       setTranslationNoteData(null);
-      setShowLLMInsightPopup(false);
-      setLlmInsightWord(null);
+      setShowAIInsightPopup(false);
+      setAiInsightWord(null);
       setEditingAnnotation(null);
     }, 500),
     [],
@@ -1107,7 +1107,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         transPopupHeight,
         popupPadding,
       );
-      const llmInsightPopupPos = getPopupPosition(
+      const aiInsightPopupPos = getPopupPosition(
         triangPos,
         rect,
         transPopupWidth,
@@ -1119,13 +1119,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setDictPopupPosition(dictPopupPos);
       setTranslatorPopupPosition(transPopupPos);
       setTranslationNotePopupPosition(translationNotePopupPos);
-      setLlmInsightPopupPosition(llmInsightPopupPos);
+      setAiInsightPopupPosition(aiInsightPopupPos);
       setProofreadPopupPosition(proofreadPopupPos);
       setTrianglePosition(triangPos);
 
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
-      if (showTranslationNotePopup || showLLMInsightPopup) {
-        // Popup already open via onShowAnnotation or handleLLMInsight
+      if (showTranslationNotePopup || showAIInsightPopup) {
+        // Popup already open via onShowAnnotation or handleAIInsight
       } else if (wantWordLensDict) {
         // Route through handleDictionary so a Word Lens gloss tap honours the
         // dictionary settings (system dictionary vs the in-app popup) — same
@@ -1455,20 +1455,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowDeepLPopup(true);
   };
 
-  const handleLLMInsight = () => {
+  const handleAIInsight = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
     setShowDictionaryPopup(false);
     setShowDeepLPopup(false);
     setShowProofreadPopup(false);
     setShowTranslationNotePopup(false);
-    setLlmInsightWord({
+    setAiInsightWord({
       text: selection.text,
       sourceLang: primaryLang,
       targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
       cfi: selection.cfi,
     });
-    setShowLLMInsightPopup(true);
+    setShowAIInsightPopup(true);
   };
 
   const handleSpeakText = async (oneTime = false) => {
@@ -1852,7 +1852,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           disabled: bookData.book?.format !== 'EPUB',
         };
       case 'llm-insight':
-        return { tooltipText: _(label), Icon, onClick: handleLLMInsight };
+        return { tooltipText: _(label), Icon, onClick: handleAIInsight };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };
       default:
@@ -1974,31 +1974,31 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onDelete={handleDeleteTranslation}
           onInsight={() => {
             setShowTranslationNotePopup(false);
-            setLlmInsightWord({
+            setAiInsightWord({
               text: translationNoteData.text,
               sourceLang: primaryLang,
               targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
               cfi: translationNoteData.cfi,
             });
-            setShowLLMInsightPopup(true);
+            setShowAIInsightPopup(true);
           }}
         />
       )}
-      {showLLMInsightPopup && trianglePosition && llmInsightPopupPosition && llmInsightWord && (
-        <LLMInsightPopup
-          word={llmInsightWord.text}
-          sourceLang={llmInsightWord.sourceLang}
-          targetLang={llmInsightWord.targetLang}
-          position={llmInsightPopupPosition}
+      {showAIInsightPopup && trianglePosition && aiInsightPopupPosition && aiInsightWord && (
+        <AIInsightPopup
+          word={aiInsightWord.text}
+          sourceLang={aiInsightWord.sourceLang}
+          targetLang={aiInsightWord.targetLang}
+          position={aiInsightPopupPosition}
           trianglePosition={trianglePosition}
           width={transPopupWidth}
           height={Math.min(360, maxHeight)}
           onDismiss={handleDismissPopupAndSelection}
           onSelectAlternative={(translation) => {
-            if (llmInsightWord) {
-              const noteCfi = llmInsightWord.cfi ?? selection?.cfi;
+            if (aiInsightWord) {
+              const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
               if (noteCfi) {
-                handleSaveTranslation(llmInsightWord.text, translation, undefined, undefined, noteCfi);
+                handleSaveTranslation(aiInsightWord.text, translation, undefined, undefined, noteCfi);
               }
             }
           }}

@@ -39,17 +39,24 @@ export interface AISettings {
   indexingMode: 'on-demand' | 'background';
 
   /**
-   * LLM Word Insight provider configuration.
+    * AI Insight provider configuration.
    * Synced via SETTINGS_WHITELIST (apiKey encrypted via SETTINGS_ENCRYPTED_FIELDS).
    */
   llm?: {
-    provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
+    provider: 'openrouter' | 'openai' | 'google-ai-studio' | 'groq' | 'mistral' | 'anthropic' | 'deepseek' | 'moonshot' | 'xiaomi' | 'z-ai' | 'custom';
     apiKey: string;
     baseUrl: string;
     apiPath?: string;
     model: string;
     systemPrompt?: string;
     targetLang?: string;
+    fallbacks?: Array<{
+      provider: string;
+      apiKey: string;
+      baseUrl: string;
+      apiPath?: string;
+      model: string;
+    }>;
   };
 
   /**

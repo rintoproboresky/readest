@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
@@ -6,11 +6,20 @@ import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
+import { PiTrash, PiPlus } from 'react-icons/pi';
 
-type LLMProvider = 'openrouter' | 'openai' | 'google-ai-studio' | 'custom';
+type LLMProvider = 'openrouter' | 'openai' | 'google-ai-studio' | 'groq' | 'mistral' | 'anthropic' | 'deepseek' | 'moonshot' | 'xiaomi' | 'z-ai' | 'custom';
+
+interface FallbackEntry {
+  provider: LLMProvider;
+  apiKey: string;
+  apiPath: string;
+  baseUrl: string;
+  model: string;
+}
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 
-const LLMInsightPanel: React.FC = () => {
+const AIInsightPanel: React.FC = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
@@ -22,6 +31,13 @@ const LLMInsightPanel: React.FC = () => {
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
   const [insightTargetLang, setInsightTargetLang] = useState(llmCfg?.targetLang ?? '');
+  const [fallbacks, setFallbacks] = useState<FallbackEntry[]>(() => (llmCfg?.fallbacks ?? []).map((f) => ({
+    provider: (f.provider as LLMProvider) || 'openai',
+    apiKey: f.apiKey ?? '',
+    baseUrl: f.baseUrl ?? '',
+    apiPath: f.apiPath ?? '/chat/completions',
+    model: f.model ?? '',
+  })));
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -37,6 +53,15 @@ const LLMInsightPanel: React.FC = () => {
     setApiPath(llmCfg.apiPath ?? '/chat/completions');
     setModel(llmCfg.model ?? '');
     setInsightTargetLang(llmCfg.targetLang ?? '');
+    if (llmCfg.fallbacks) {
+      setFallbacks(llmCfg.fallbacks.map((f) => ({
+        provider: (f.provider as LLMProvider) || 'openai',
+        apiKey: f.apiKey ?? '',
+        baseUrl: f.baseUrl ?? '',
+        apiPath: f.apiPath ?? '/chat/completions',
+        model: f.model ?? '',
+      })));
+    }
   }, [llmCfg]);
 
   const providerDefaults: Record<string, { baseUrl: string; apiPath: string; model: string }> = {
@@ -46,6 +71,41 @@ const LLMInsightPanel: React.FC = () => {
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
       apiPath: '/chat/completions',
       model: 'gemini-3.1-flash-lite',
+    },
+    groq: {
+      baseUrl: 'https://api.groq.com/openai/v1',
+      apiPath: '/chat/completions',
+      model: 'llama-3.3-70b-versatile',
+    },
+    mistral: {
+      baseUrl: 'https://api.mistral.ai/v1',
+      apiPath: '/chat/completions',
+      model: 'mistral-large-latest',
+    },
+    anthropic: {
+      baseUrl: 'https://api.anthropic.com/v1',
+      apiPath: '/messages',
+      model: 'claude-sonnet-4-6',
+    },
+    moonshot: {
+      baseUrl: 'https://api.moonshot.ai/v1',
+      apiPath: '/chat/completions',
+      model: 'kimi-k2.6',
+    },
+    deepseek: {
+      baseUrl: 'https://api.deepseek.com',
+      apiPath: '/chat/completions',
+      model: 'deepseek-v4-flash',
+    },
+    xiaomi: {
+      baseUrl: 'https://api.xiaomimimo.com/v1',
+      apiPath: '/chat/completions',
+      model: 'mimo-v2.5-pro',
+    },
+    'z-ai': {
+      baseUrl: 'https://api.z.ai/api/paas/v4',
+      apiPath: '/chat/completions',
+      model: 'glm-5.2',
     },
   };
 
@@ -60,40 +120,79 @@ const LLMInsightPanel: React.FC = () => {
     }
   };
 
+  const handleAddFallback = () => {
+    setFallbacks((prev) => [
+      ...prev,
+      { provider: 'openai', apiKey: '', baseUrl: '', apiPath: '/chat/completions', model: '' },
+    ]);
+  };
+
+  const handleRemoveFallback = (index: number) => {
+    setFallbacks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFallbackProviderChange = (index: number, value: string) => {
+    setFallbacks((prev) => {
+      const next = [...prev];
+      const entry = next[index]!;
+      entry.provider = value as LLMProvider;
+      entry.apiKey = '';
+      const preset = providerDefaults[value];
+      if (preset) {
+        entry.baseUrl = preset.baseUrl;
+        entry.apiPath = preset.apiPath;
+        if (preset.model) entry.model = preset.model;
+      }
+      return next;
+    });
+  };
+
+  const handleFallbackChange = (index: number, field: keyof FallbackEntry, value: string) => {
+    setFallbacks((prev) => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index]!, [field]: value };
+      }
+      return next;
+    });
+  };
+
+  const buildLlmConfig = useCallback(() => ({
+    provider: provider as LLMProvider,
+    apiKey,
+    baseUrl,
+    apiPath,
+    model,
+    targetLang: insightTargetLang,
+    fallbacks: fallbacks.map((f) => ({
+      provider: f.provider,
+      apiKey: f.apiKey,
+      baseUrl: f.baseUrl,
+      apiPath: f.apiPath,
+      model: f.model,
+    })),
+  }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks]);
+
   useEffect(() => {
     if (!settings.aiSettings) return;
     if (!syncedFromStore.current) return;
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: {
-        provider: provider as LLMProvider,
-        apiKey,
-        baseUrl,
-        apiPath,
-        model,
-        targetLang: insightTargetLang,
-      },
+      llm: buildLlmConfig(),
     };
     setSettings(updated);
-  }, [provider, apiKey, baseUrl, apiPath, model, insightTargetLang]);
+  }, [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks, buildLlmConfig]);
 
   const handleSave = async () => {
     const updated = { ...settings };
     updated.aiSettings = {
       ...updated.aiSettings,
-      llm: {
-        provider: provider as LLMProvider,
-        apiKey,
-        baseUrl,
-        apiPath,
-        model,
-        targetLang: insightTargetLang,
-      },
+      llm: buildLlmConfig(),
     };
     setSettings(updated);
     await saveSettings(envConfig, updated);
-    eventDispatcher.dispatch('toast', { type: 'success', message: _('LLM configuration saved') });
+    eventDispatcher.dispatch('toast', { type: 'success', message: _('AI Insight configuration saved') });
   };
 
   const handleTestConnection = async () => {
@@ -114,7 +213,7 @@ const LLMInsightPanel: React.FC = () => {
         max_tokens: 32,
         headers: {
           'HTTP-Referer': 'readest',
-          'X-Title': 'Readest LLM Insight',
+          'X-Title': 'Readest AI Insight',
         },
       };
 
@@ -153,7 +252,7 @@ const LLMInsightPanel: React.FC = () => {
   };
 
   return (
-    <BoxedList title={_('LLM Word Insight')}>
+    <BoxedList title={_('AI Insight')}>
       <SettingsRow label={_('Provider')} asLabel>
         <select
           className='select select-bordered select-sm bg-base-100 text-base-content'
@@ -163,6 +262,13 @@ const LLMInsightPanel: React.FC = () => {
           <option value='openrouter'>OpenRouter</option>
           <option value='openai'>OpenAI</option>
           <option value='google-ai-studio'>Google AI Studio</option>
+          <option value='groq'>Groq</option>
+          <option value='mistral'>Mistral</option>
+          <option value='anthropic'>Anthropic</option>
+          <option value='moonshot'>Moonshot</option>
+          <option value='deepseek'>DeepSeek</option>
+          <option value='xiaomi'>Xiaomi MiMo</option>
+          <option value='z-ai'>Z.AI</option>
           <option value='custom'>{_('Custom')}</option>
         </select>
       </SettingsRow>
@@ -232,6 +338,71 @@ const LLMInsightPanel: React.FC = () => {
         />
       </div>
 
+      {/* Fallback Providers */}
+      <div className='border-t border-base-200 pt-3'>
+        <div className='mb-2 flex items-center justify-between px-4'>
+          <span className='text-xs font-semibold text-base-content/70'>
+            {_('Fallback Providers')} ({fallbacks.length})
+          </span>
+          <button className='btn btn-ghost btn-xs gap-1' onClick={handleAddFallback}>
+            <PiPlus className='text-sm' />
+            {_('Add')}
+          </button>
+        </div>
+        {fallbacks.length > 0 && (
+          <div className='flex flex-col gap-2 px-4 pb-2'>
+            {fallbacks.map((fb, i) => (
+              <div key={i} className='rounded-md border border-base-200 bg-base-100/50 p-2'>
+                <div className='mb-1.5 flex items-center justify-between'>
+                  <span className='text-[10px] font-medium text-base-content/50'>
+                    {_('Fallback')} #{i + 1}
+                  </span>
+                  <button className='btn btn-ghost btn-xs text-error' onClick={() => handleRemoveFallback(i)}>
+                    <PiTrash className='text-sm' />
+                  </button>
+                </div>
+                <div className='flex flex-col gap-1.5'>
+                  <select
+                    className='select select-bordered select-xs bg-base-100 text-xs text-base-content'
+                    value={fb.provider}
+                    onChange={(e) => handleFallbackProviderChange(i, e.target.value)}
+                  >
+                    <option value='openrouter'>OpenRouter</option>
+                    <option value='openai'>OpenAI</option>
+                    <option value='google-ai-studio'>Google AI Studio</option>
+                    <option value='groq'>Groq</option>
+                    <option value='mistral'>Mistral</option>
+                    <option value='anthropic'>Anthropic</option>
+                    <option value='deepseek'>DeepSeek</option>
+                    <option value='moonshot'>Moonshot</option>
+                    <option value='xiaomi'>Xiaomi MiMo</option>
+                    <option value='z-ai'>Z.AI</option>
+                    <option value='custom'>{_('Custom')}</option>
+                  </select>
+                  <div className='flex gap-1.5'>
+                    <input
+                      type='password'
+                      className='input input-bordered input-xs flex-1 text-xs'
+                      value={fb.apiKey}
+                      onChange={(e) => handleFallbackChange(i, 'apiKey', e.target.value)}
+                      placeholder='sk-...'
+                      autoComplete='off'
+                    />
+                    <input
+                      type='text'
+                      className='input input-bordered input-xs w-1/2 text-xs'
+                      value={fb.model}
+                      onChange={(e) => handleFallbackChange(i, 'model', e.target.value)}
+                      placeholder='model'
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <SettingsRow label={''}>
         <div className='flex items-center gap-2'>
           <button
@@ -256,4 +427,4 @@ const LLMInsightPanel: React.FC = () => {
   );
 };
 
-export default LLMInsightPanel;
+export default AIInsightPanel;

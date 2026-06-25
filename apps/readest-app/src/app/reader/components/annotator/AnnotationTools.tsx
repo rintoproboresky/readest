@@ -93,7 +93,7 @@ export const annotationToolButtons = createAnnotationToolButtons([
   },
   {
     type: 'llm-insight',
-    label: _('LLM Insight'),
+    label: _('AI Insight'),
     tooltip: _('Get AI-powered word insights and alternatives'),
     Icon: LuBrain,
     quickAction: false,

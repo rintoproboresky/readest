@@ -34,7 +34,7 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
-import LLMInsightPanel from './llm/LLMInsightPanel';
+import AIInsightPanel from './llm/AIInsightPanel';
 
 export type SettingsPanelType =
   | 'Font'
@@ -117,7 +117,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     {
       tab: 'Insight',
       icon: LuBrain,
-      label: _('Word Insight'),
+      label: _('AI Insight'),
     },
     {
       tab: 'AI',
@@ -483,7 +483,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         )}
         {activePanel === 'AI' && <AIPanel />}
 {activePanel === 'Integrations' && <IntegrationsPanel />}
-{activePanel === 'Insight' && <LLMInsightPanel />}
+{activePanel === 'Insight' && <AIInsightPanel />}
 {activePanel === 'Custom' && (
           <MiscPanel
             bookKey={bookKey}

@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
-import { getWordInsight, WordInsightResult } from '@/services/llm/wordInsight';
+import { getAIInsight, AIInsightResult } from '@/services/llm/aiInsight';
 import { useSettingsStore } from '@/store/settingsStore';
 
-interface LLMInsightPopupProps {
+interface AIInsightPopupProps {
   word: string;
   sourceLang: string;
   targetLang: string;
@@ -19,7 +19,7 @@ interface LLMInsightPopupProps {
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
-const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
+const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   word,
   sourceLang,
   targetLang,
@@ -33,14 +33,14 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
   const _ = useTranslation();
   const { settings } = useSettingsStore();
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
-  const [result, setResult] = useState<WordInsightResult | null>(null);
+  const [result, setResult] = useState<AIInsightResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const fetchInsight = async () => {
     const llmConfig = settings?.aiSettings?.llm;
     if (!llmConfig?.apiKey) {
-      setError(_('LLM not configured. Go to Settings → Word Insight.'));
+      setError(_('AI Insight not configured. Go to Settings → AI Insight.'));
       setLoadingState('error');
       return;
     }
@@ -48,11 +48,12 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
     setError(null);
     setResult(null);
     try {
-      const insight = await getWordInsight(word, sourceLang, targetLang, {
+      const insight = await getAIInsight(word, sourceLang, targetLang, {
         apiKey: llmConfig.apiKey,
         model: llmConfig.model || 'gpt-4o-mini',
         baseUrl: llmConfig.baseUrl,
         apiPath: llmConfig.apiPath,
+        fallbacks: llmConfig.fallbacks,
       });
       setResult(insight);
       setLoadingState('success');
@@ -78,7 +79,7 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
       <div className='flex max-h-[320px] flex-col gap-2 overflow-y-auto p-3'>
         {/* Header */}
         <div className='flex items-center gap-2 border-b border-base-200 pb-2'>
-          <span className='text-base-content/80 text-xs font-semibold'>{_('Word Insight')}</span>
+          <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
           <span className='text-base-content/40 text-xs'>
             &ldquo;{word}&rdquo; ({sourceLang} → {targetLang})
           </span>
@@ -181,4 +182,4 @@ const LLMInsightPopup: React.FC<LLMInsightPopupProps> = ({
   );
 };
 
-export default LLMInsightPopup;
+export default AIInsightPopup;

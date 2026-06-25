@@ -164,7 +164,7 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
               <div className='flex-1' />
               {onInsight && (
                 <button className='btn btn-primary btn-xs gap-1' onClick={onInsight}>
-                  <span className='text-xs'>{_('LLM Insight')}</span>
+                  <span className='text-xs'>{_('AI Insight')}</span>
                 </button>
               )}
             </>
