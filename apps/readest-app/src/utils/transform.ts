@@ -182,11 +182,6 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     deletedAt,
   } = bookNote as BookNote;
 
-  let dbNote = note;
-  if (type === 'translation') {
-    dbNote = JSON.stringify({ translation, aiInsight });
-  }
-
   return {
     user_id: userId,
     book_hash: bookHash!,
@@ -200,7 +195,9 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     text: sanitizeString(text),
     style,
     color,
-    note: dbNote,
+    note,
+    translation,
+    ai_insight: aiInsight ? JSON.stringify(aiInsight) : null,
     global,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
@@ -223,26 +220,19 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     style,
     color,
     note,
+    translation,
+    ai_insight,
     global,
     created_at,
     updated_at,
     deleted_at,
   } = dbBookNote;
 
-  let translation: string | undefined;
   let aiInsight: BookNote['aiInsight'];
-  let parsedNote = note;
-
-  if (type === 'translation' && note) {
+  if (ai_insight) {
     try {
-      const parsed = JSON.parse(note);
-      translation = parsed.translation;
-      aiInsight = parsed.aiInsight;
-      parsedNote = '';
-    } catch {
-      translation = note;
-      parsedNote = '';
-    }
+      aiInsight = typeof ai_insight === 'string' ? JSON.parse(ai_insight) : ai_insight;
+    } catch {}
   }
 
   return {
@@ -257,7 +247,7 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     text,
     style: style as HighlightStyle,
     color: color as HighlightColor,
-    note: parsedNote,
+    note,
     translation,
     aiInsight,
     global,

@@ -53,6 +53,8 @@ export interface DBBookNote {
   color?: string;
   note: string;
   global?: boolean;
+  translation?: string;
+  ai_insight?: string | null;
 
   created_at?: string;
   updated_at?: string;

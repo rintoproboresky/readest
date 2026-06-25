@@ -230,7 +230,7 @@ describe('transformBookNote with global flag', () => {
     expect(JSON.parse(JSON.stringify(legacyDb))).not.toHaveProperty('global');
   });
 
-  it('packs translation and aiInsight into note field when type is translation', () => {
+  it('maps translation and ai_insight fields directly', () => {
     const note: BookNote = {
       ...baseNote,
       type: 'translation',
@@ -241,45 +241,26 @@ describe('transformBookNote with global flag', () => {
       },
     };
     const db = transformBookNoteToDB(note, 'user1');
-    const parsedNote = JSON.parse(db.note);
-    expect(parsedNote.translation).toBe('translated text');
-    expect(parsedNote.aiInsight.mainTranslation).toBe('translated text');
-    expect(parsedNote.aiInsight.alternatives[0].translation).toBe('alt');
+    expect(db.translation).toBe('translated text');
+    expect(db.ai_insight).toBe(JSON.stringify(note.aiInsight));
   });
 
-  it('unpacks translation and aiInsight from JSON note field when type is translation', () => {
+  it('unpacks translation and ai_insight fields directly from DB', () => {
     const dbRecord: DBBookNote = {
       user_id: 'user1',
       book_hash: 'h1',
       id: 'n1',
       type: 'translation',
-      note: JSON.stringify({
-        translation: 'restored translation',
-        aiInsight: { mainTranslation: 'restored translation', alternatives: [] },
-      }),
+      note: 'test note',
+      translation: 'restored translation',
+      ai_insight: JSON.stringify({ mainTranslation: 'restored translation', alternatives: [] }),
       created_at: new Date(1).toISOString(),
       updated_at: new Date(2).toISOString(),
     };
     const note = transformBookNoteFromDB(dbRecord);
     expect(note.translation).toBe('restored translation');
     expect(note.aiInsight?.mainTranslation).toBe('restored translation');
-    expect(note.note).toBe('');
-  });
-
-  it('falls back to treating note field as raw translation if it is not JSON when type is translation', () => {
-    const dbRecord: DBBookNote = {
-      user_id: 'user1',
-      book_hash: 'h1',
-      id: 'n1',
-      type: 'translation',
-      note: 'legacy raw translation string',
-      created_at: new Date(1).toISOString(),
-      updated_at: new Date(2).toISOString(),
-    };
-    const note = transformBookNoteFromDB(dbRecord);
-    expect(note.translation).toBe('legacy raw translation string');
-    expect(note.aiInsight).toBeUndefined();
-    expect(note.note).toBe('');
+    expect(note.note).toBe('test note');
   });
 });
 
