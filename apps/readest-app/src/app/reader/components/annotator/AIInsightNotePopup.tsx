@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
+import { PiArrowsClockwise, PiPencilSimple, PiTrash } from 'react-icons/pi';
 import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
 
 interface AIInsightData {
@@ -15,7 +16,7 @@ interface AIInsightData {
   note?: string;
 }
 
-interface TranslationNotePopupProps {
+interface AIInsightNotePopupProps {
   text: string;
   translation: string;
   cfi: string;
@@ -31,7 +32,7 @@ interface TranslationNotePopupProps {
   aiInsight?: AIInsightData;
 }
 
-const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
+const AIInsightNotePopup: React.FC<AIInsightNotePopupProps> = ({
   text,
   translation,
   cfi,
@@ -92,48 +93,49 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
         onDismiss();
       }}
     >
-      <div className='flex flex-col gap-3 p-3'>
-        <div className='flex flex-col gap-1'>
-          <span className='text-base-content/60 text-xs font-medium'>{_('Translation')}</span>
-          <div className='text-base-content flex flex-col gap-1'>
-            <span className='text-sm'>{text}</span>
-            {editing ? (
-              <textarea
-                ref={textareaRef}
-                className='textarea textarea-bordered text-base text-base-content font-medium w-full resize-none'
-                rows={3}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-              />
-            ) : (
-              <span className='text-base text-base-content font-medium'>{translation}</span>
-            )}
-          </div>
+      <div className='flex max-h-[320px] flex-col gap-2 overflow-y-auto p-3'>
+        <div className='flex items-center gap-2 border-b border-base-200 pb-2'>
+          <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
+          <span className='text-base-content/40 text-xs'>&ldquo;{text}&rdquo;</span>
+        </div>
+        <div className='w-full rounded-md bg-base-200/50 px-3 py-2'>
+          <span className='text-xs font-medium text-base-content/50'>{_('Translation')}</span>
+          {editing ? (
+            <textarea
+              ref={textareaRef}
+              className='textarea textarea-bordered text-base text-base-content font-medium w-full resize-none mt-1'
+              rows={3}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+            />
+          ) : (
+            <div className='mt-0.5 text-sm font-semibold text-base-content'>{translation}</div>
+          )}
         </div>
         {!editing && aiInsight && aiInsight.alternatives.length > 0 && (
           <div className='flex flex-col gap-1.5'>
-            <span className='text-base-content/50 text-[10px] font-medium'>{_('Alternatives')}</span>
+            <span className='text-[10px] font-medium text-base-content/50'>{_('Alternatives')}</span>
             {aiInsight.alternatives.map((alt, i) => (
-              <div key={i} className='flex flex-col gap-0.5 rounded bg-base-200/30 px-2 py-1.5'>
+              <div key={i} className='flex flex-col gap-0.5 rounded-md bg-base-200/30 px-3 py-2'>
                 <div className='flex items-center gap-1.5'>
                   <span className='text-xs font-medium'>{alt.translation}</span>
-                  <span className='rounded bg-base-300/50 px-1 py-0.5 text-[9px] text-base-content/60'>
+                  <span className='rounded bg-cyan-100/50 px-1.5 py-0.5 text-[10px] font-medium text-cyan-700'>
                     {alt.usage}
                   </span>
                 </div>
-                <span className='text-[10px] italic text-base-content/50'>{alt.example}</span>
+                <span className='text-xs italic text-base-content/50'>&ldquo;{alt.example}&rdquo;</span>
               </div>
             ))}
           </div>
         )}
         {!editing && aiInsight?.note && (
-          <div className='rounded bg-base-200/30 px-2 py-1.5'>
-            <span className='text-[10px] italic text-base-content/50'>{aiInsight.note}</span>
+          <div className='rounded-md bg-base-200/30 px-3 py-1.5'>
+            <span className='text-[11px] italic text-base-content/50'>{aiInsight.note}</span>
           </div>
         )}
         {editing && (
           <div className='flex flex-col gap-2'>
-            <span className='text-base-content/60 text-xs font-medium'>{_('Style')}</span>
+            <span className='text-xs font-medium text-base-content/50'>{_('Style')}</span>
             <TranslationStylePicker
               style={editStyle}
               color={editColor}
@@ -170,19 +172,21 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
                   setEditColor(initialColor);
                   setEditing(true);
                 }}
+                title={_('Edit')}
               >
-                {_('Edit')}
+                <PiPencilSimple className='text-xs' />
               </button>
               <button
                 className='btn btn-ghost btn-xs text-base-content/60 hover:text-error'
                 onClick={handleDelete}
+                title={_('Delete')}
               >
-                {_('Delete')}
+                <PiTrash className='text-xs' />
               </button>
               <div className='flex-1' />
               {onInsight && (
-                <button className='btn btn-primary btn-xs gap-1' onClick={onInsight}>
-                  <span className='text-xs'>{_('AI Insight')}</span>
+                <button className='btn btn-primary btn-xs gap-1' onClick={onInsight} title={_('AI Insight')}>
+                  <PiArrowsClockwise className='text-xs' />
                 </button>
               )}
             </>
@@ -193,4 +197,4 @@ const TranslationNotePopup: React.FC<TranslationNotePopupProps> = ({
   );
 };
 
-export default TranslationNotePopup;
+export default AIInsightNotePopup;

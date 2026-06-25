@@ -4,6 +4,7 @@ import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
 import { getAIInsight, AIInsightResult } from '@/services/llm/aiInsight';
 import { useSettingsStore } from '@/store/settingsStore';
+import { PiArrowsClockwise, PiX } from 'react-icons/pi';
 
 interface AIInsightPopupProps {
   word: string;
@@ -16,6 +17,7 @@ interface AIInsightPopupProps {
   onDismiss: () => void;
   onSelectAlternative?: (translation: string) => void;
   onSaveFullResult?: (result: AIInsightResult) => void;
+  onDiscard?: () => void;
 }
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
@@ -31,6 +33,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   onDismiss,
   onSelectAlternative,
   onSaveFullResult,
+  onDiscard,
 }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
@@ -38,6 +41,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   const [result, setResult] = useState<AIInsightResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [spinning, setSpinning] = useState(false);
   const autoSaved = useRef(false);
 
   useEffect(() => {
@@ -55,9 +59,11 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
       setLoadingState('error');
       return;
     }
+    setSpinning(true);
     setLoadingState('loading');
     setError(null);
     setResult(null);
+    autoSaved.current = false;
     try {
       const insight = await getAIInsight(word, sourceLang, targetLang, {
         apiKey: llmConfig.apiKey,
@@ -71,6 +77,8 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
     } catch (err) {
       setError((err as Error).message || _('Failed to get word insight'));
       setLoadingState('error');
+    } finally {
+      setSpinning(false);
     }
   };
 
@@ -89,16 +97,35 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
     >
       <div className='flex max-h-[320px] flex-col gap-2 overflow-y-auto p-3'>
         {/* Header */}
-        <div className='flex items-center gap-2 border-b border-base-200 pb-2'>
-          <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
-          <span className='text-base-content/40 text-xs'>
-            &ldquo;{word}&rdquo; ({sourceLang} → {targetLang})
-          </span>
+        <div className='flex items-center justify-between border-b border-base-200 pb-2'>
+          <div className='flex items-center gap-2'>
+            <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
+            <span className='text-base-content/40 text-xs'>
+              &ldquo;{word}&rdquo; ({sourceLang} → {targetLang})
+            </span>
+          </div>
+          <button
+            className='btn btn-ghost btn-xs p-0.5'
+            onClick={fetchInsight}
+            disabled={loadingState === 'loading'}
+            title={_('Regenerate')}
+          >
+            <PiArrowsClockwise
+              className={`text-sm ${spinning ? 'animate-spin' : ''}`}
+            />
+          </button>
         </div>
 
         {loadingState === 'success' && result && (
-          <div className='rounded bg-primary/10 px-2.5 py-1 text-[10px] text-primary'>
-            {_('Main translation saved')}
+          <div className='flex items-center justify-between rounded bg-primary/10 px-2.5 py-1.5'>
+            <span className='text-[10px] font-medium text-primary'>{_('Insight saved')}</span>
+            <button
+              className='btn btn-ghost btn-xs p-0.5 text-base-content/40 hover:text-error'
+              onClick={onDiscard}
+              title={_('Discard')}
+            >
+              <PiX className='text-sm' />
+            </button>
           </div>
         )}
 
@@ -130,7 +157,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
               className='w-full rounded-md bg-base-200/50 px-3 py-2 text-left transition-colors hover:bg-base-200/80'
               onClick={() => onSelectAlternative?.(result.mainTranslation)}
             >
-              <span className='text-base-content/50 text-xs font-medium'>{_('Most likely')}</span>
+              <span className='text-base-content/50 text-xs font-medium'>{_('Translation')}</span>
               <div className='text-base-content text-sm font-semibold'>
                 {result.mainTranslation}
               </div>
@@ -159,15 +186,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
                         <span className='text-base-content text-sm font-medium'>
                           {alt.translation}
                         </span>
-                        <span
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                            alt.confidence === 'high'
-                              ? 'bg-success/10 text-success'
-                              : alt.confidence === 'medium'
-                                ? 'bg-warning/10 text-warning'
-                                : 'bg-base-300/50 text-base-content/50'
-                          }`}
-                        >
+                        <span className='rounded bg-cyan-100/50 px-1.5 py-0.5 text-[10px] font-medium text-cyan-700'>
                           {alt.usage}
                         </span>
                       </div>

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { RiQuillPenLine } from 'react-icons/ri';
+import { PiTrash } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -67,8 +68,9 @@ const VocabularyTab: React.FC<VocabularyTabProps> = ({ bookKey }) => {
                 className='btn btn-ghost btn-xs text-base-content/40 hover:text-error shrink-0 mt-0.5'
                 onClick={() => handleDelete(item.id)}
                 aria-label={_('Delete')}
+                title={_('Delete')}
               >
-                {_('Delete')}
+                <PiTrash className='text-sm' />
               </button>
             </div>
           </li>

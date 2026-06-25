@@ -77,7 +77,7 @@ import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
-import TranslationNotePopup from './TranslationNotePopup';
+import AIInsightNotePopup from './AIInsightNotePopup';
 import AIInsightPopup from './AIInsightPopup';
 import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
@@ -1963,7 +1963,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         />
       )}
       {showTranslationNotePopup && trianglePosition && translationNotePopupPosition && translationNoteData && (
-        <TranslationNotePopup
+        <AIInsightNotePopup
           text={translationNoteData.text}
           translation={translationNoteData.translation}
           cfi={translationNoteData.cfi}
@@ -2012,6 +2012,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               if (noteCfi) {
                 handleSaveTranslation(aiInsightWord.text, result.mainTranslation, undefined, undefined, noteCfi, result);
               }
+            }
+          }}
+          onDiscard={() => {
+            if (aiInsightWord?.cfi) {
+              handleDeleteTranslation(aiInsightWord.cfi);
             }
           }}
         />
