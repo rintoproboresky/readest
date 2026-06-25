@@ -39,6 +39,38 @@ export interface AISettings {
   indexingMode: 'on-demand' | 'background';
 
   /**
+   * AI Insight provider configuration.
+   * Synced via SETTINGS_WHITELIST (apiKey encrypted via SETTINGS_ENCRYPTED_FIELDS).
+   */
+  llm?: {
+    provider:
+      | 'openrouter'
+      | 'openai'
+      | 'google-ai-studio'
+      | 'groq'
+      | 'mistral'
+      | 'anthropic'
+      | 'deepseek'
+      | 'moonshot'
+      | 'xiaomi'
+      | 'z-ai'
+      | 'custom';
+    apiKey: string;
+    baseUrl: string;
+    apiPath?: string;
+    model: string;
+    systemPrompt?: string;
+    targetLang?: string;
+    fallbacks?: Array<{
+      provider: string;
+      apiKey: string;
+      baseUrl: string;
+      apiPath?: string;
+      model: string;
+    }>;
+  };
+
+  /**
    * Reedy MVP retrieval (Turso vector + Tantivy FTS + CFI citations).
    * MVP is desktop-only — the runtime gate in `selectBackend()` enforces
    * isTauri() regardless of this flag. UI in M1.8 disables the toggle on web.

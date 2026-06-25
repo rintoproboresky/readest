@@ -5,6 +5,7 @@ import { VscSymbolColor } from 'react-icons/vsc';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
 import { PiRobot, PiSpeakerHigh, PiSun, PiMoon } from 'react-icons/pi';
+import { LuBrain } from 'react-icons/lu';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdRefresh } from 'react-icons/md';
 import { IconType } from 'react-icons';
@@ -155,6 +156,7 @@ const panelIcons: Record<SettingsPanelType, IconType> = {
   Language: RiTranslate,
   AI: PiRobot,
   Integrations: RiShareLine,
+  Insight: LuBrain,
   Custom: IoAccessibilityOutline,
 };
 

@@ -31,6 +31,7 @@ interface TranslatorPopupProps {
   popupWidth: number;
   popupHeight: number;
   onDismiss?: () => void;
+  onSaveTranslation?: (text: string, translation: string, style?: string, color?: string) => void;
 }
 
 interface TranslatorType {
@@ -46,6 +47,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   popupWidth,
   popupHeight,
   onDismiss,
+  onSaveTranslation,
 }) => {
   const _ = useTranslation();
   const { token } = useAuth();
@@ -98,7 +100,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   }, [translators]);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+
     const fetchTranslation = async () => {
       setError(null);
       setTranslation(null);
@@ -106,6 +110,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
       try {
         const input = text.replaceAll('\n', '').trim();
         const result = await translate([input]);
+        if (cancelled) return;
         const translatedText = result[0];
         const detectedSource = null;
 
@@ -114,22 +119,27 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         }
 
         setTranslation(translatedText);
+        onSaveTranslation?.(text, translatedText);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
       } catch (err) {
-        console.error(err);
+        if (cancelled) return;
         if (!token) {
           setError(_('Unable to fetch the translation. Please log in first and try again.'));
         } else {
           setError(_('Unable to fetch the translation. Try again later.'));
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchTranslation();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, token, sourceLang, targetLang, provider, translate]);
 
@@ -141,7 +151,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         minHeight={popupHeight}
         maxHeight={720}
         position={position}
-        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600'
+        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,2fr] bg-gray-600'
         triangleClassName='text-gray-600'
         onDismiss={onDismiss}
       >
@@ -172,7 +182,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
         <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
 
-        <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
+        <div className='overflow-y-auto px-4 pb-2 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
             <Select
@@ -188,7 +198,10 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             />
           </div>
           {loading ? (
-            <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
+            <div className='flex items-center gap-2'>
+              <span className='loading loading-dots loading-sm'></span>
+              <p className='text-base italic text-gray-500'>{_('Translating...')}</p>
+            </div>
           ) : (
             <div>
               {error ? (
