@@ -174,11 +174,18 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     style,
     color,
     note,
+    translation,
+    aiInsight,
     global,
     createdAt,
     updatedAt,
     deletedAt,
   } = bookNote as BookNote;
+
+  let dbNote = note;
+  if (type === 'translation') {
+    dbNote = JSON.stringify({ translation, aiInsight });
+  }
 
   return {
     user_id: userId,
@@ -193,7 +200,7 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     text: sanitizeString(text),
     style,
     color,
-    note,
+    note: dbNote,
     global,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
@@ -222,6 +229,22 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     deleted_at,
   } = dbBookNote;
 
+  let translation: string | undefined;
+  let aiInsight: BookNote['aiInsight'];
+  let parsedNote = note;
+
+  if (type === 'translation' && note) {
+    try {
+      const parsed = JSON.parse(note);
+      translation = parsed.translation;
+      aiInsight = parsed.aiInsight;
+      parsedNote = '';
+    } catch {
+      translation = note;
+      parsedNote = '';
+    }
+  }
+
   return {
     bookHash: book_hash,
     metaHash: meta_hash,
@@ -234,7 +257,9 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     text,
     style: style as HighlightStyle,
     color: color as HighlightColor,
-    note,
+    note: parsedNote,
+    translation,
+    aiInsight,
     global,
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),

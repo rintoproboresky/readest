@@ -229,6 +229,58 @@ describe('transformBookNote with global flag', () => {
     expect(Object.hasOwn(legacyDb, 'global')).toBe(true);
     expect(JSON.parse(JSON.stringify(legacyDb))).not.toHaveProperty('global');
   });
+
+  it('packs translation and aiInsight into note field when type is translation', () => {
+    const note: BookNote = {
+      ...baseNote,
+      type: 'translation',
+      translation: 'translated text',
+      aiInsight: {
+        mainTranslation: 'translated text',
+        alternatives: [{ translation: 'alt', usage: 'u', example: 'ex', confidence: 'high' }],
+      },
+    };
+    const db = transformBookNoteToDB(note, 'user1');
+    const parsedNote = JSON.parse(db.note);
+    expect(parsedNote.translation).toBe('translated text');
+    expect(parsedNote.aiInsight.mainTranslation).toBe('translated text');
+    expect(parsedNote.aiInsight.alternatives[0].translation).toBe('alt');
+  });
+
+  it('unpacks translation and aiInsight from JSON note field when type is translation', () => {
+    const dbRecord: DBBookNote = {
+      user_id: 'user1',
+      book_hash: 'h1',
+      id: 'n1',
+      type: 'translation',
+      note: JSON.stringify({
+        translation: 'restored translation',
+        aiInsight: { mainTranslation: 'restored translation', alternatives: [] },
+      }),
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    };
+    const note = transformBookNoteFromDB(dbRecord);
+    expect(note.translation).toBe('restored translation');
+    expect(note.aiInsight?.mainTranslation).toBe('restored translation');
+    expect(note.note).toBe('');
+  });
+
+  it('falls back to treating note field as raw translation if it is not JSON when type is translation', () => {
+    const dbRecord: DBBookNote = {
+      user_id: 'user1',
+      book_hash: 'h1',
+      id: 'n1',
+      type: 'translation',
+      note: 'legacy raw translation string',
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    };
+    const note = transformBookNoteFromDB(dbRecord);
+    expect(note.translation).toBe('legacy raw translation string');
+    expect(note.aiInsight).toBeUndefined();
+    expect(note.note).toBe('');
+  });
 });
 
 describe('transformBookConfigToDB / transformBookConfigFromDB rsvpPosition', () => {
