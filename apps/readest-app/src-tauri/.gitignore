@@ -6,3 +6,6 @@
 # Android build artifacts
 /.cargo/
 /stub-libs/
+
+# Mirror stub-libs for Gradle-phase Rust build (workingDir is src-tauri/)
+/src-tauri/stub-libs/

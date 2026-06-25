@@ -1,5 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import type { ChatModelAdapter, ChatModelRunResult } from '@assistant-ui/react';
+import { getAPIBaseUrl } from '@/services/environment';
 import { getAIProvider } from '../providers';
 import { aiLogger } from '../logger';
 import { buildSystemPrompt } from '../prompts';
@@ -32,7 +33,7 @@ async function* streamViaApiRoute(
   settings: AISettings,
   abortSignal?: AbortSignal,
 ): AsyncGenerator<string> {
-  const response = await fetch('/api/ai/chat', {
+  const response = await fetch(`${getAPIBaseUrl()}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

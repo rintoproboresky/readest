@@ -666,18 +666,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const onShowAnnotation = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    const { value, index, range } = detail;
+
     // Synchronously tell the iframe to suppress tap-to-turn for this click.
     // foliate-js fires show-annotation during the click dispatch; the parent's
     // event listeners (this function) run before the iframe's second click
     // handler dispatches iframe-single-click. Same-origin means we can write
     // directly to the iframe's global.
-    const iframe = document.querySelector('iframe');
-    if (iframe?.contentWindow) {
-      (iframe.contentWindow as any).__supressAnnotationNav = true;
+    const content = view?.renderer?.getContents().find((c) => c.index === index);
+    const iframeWindow = content?.doc?.defaultView || document.querySelector('iframe')?.contentWindow;
+    if (iframeWindow) {
+      (iframeWindow as any).__supressAnnotationNav = true;
     }
 
-    const detail = (event as CustomEvent).detail;
-    const { value, index, range } = detail;
     const config = getConfig(bookKey);
     if (!config) return;
     const { booknotes = [] } = config;

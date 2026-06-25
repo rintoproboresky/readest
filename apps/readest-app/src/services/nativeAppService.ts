@@ -571,7 +571,7 @@ export class NativeAppService extends BaseAppService {
   override hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
-  override canCustomizeRootDir = DIST_CHANNEL !== 'appstore';
+  override canCustomizeRootDir = !['android', 'ios'].includes(OS_TYPE) && DIST_CHANNEL !== 'appstore';
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override supportsCanvasContext2DFilter =
     OS_TYPE !== 'ios' && OS_TYPE !== 'macos' && OS_TYPE !== 'linux';
@@ -604,7 +604,7 @@ export class NativeAppService extends BaseAppService {
       });
     }
     const settings = await this.loadSettings();
-    if (this.customRootDir || settings.customRootDir) {
+    if (!this.isMobileApp && (this.customRootDir || settings.customRootDir)) {
       this.fs.resolvePath = getPathResolver({
         customRootDir: this.customRootDir || settings.customRootDir,
         isPortable: this.isPortableApp,

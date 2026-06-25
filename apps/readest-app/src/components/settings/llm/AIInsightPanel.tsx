@@ -3,7 +3,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, getAPIBaseUrl } from '@/services/environment';
+import { getAIFetch } from '@/services/ai/utils/httpFetch';
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
 import { PiTrash, PiPlus } from 'react-icons/pi';
@@ -215,29 +216,47 @@ const AIInsightPanel: React.FC = () => {
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     try {
-      const testPayload = {
-        apiKey: config.apiKey,
-        baseUrl: config.baseUrl.replace(/\/$/, ''),
-        apiPath: config.apiPath ?? '/v1/chat/completions',
-        model: config.model || 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Translate hello to French.' }],
-        max_tokens: 32,
-        headers: {
-          'HTTP-Referer': 'readest',
-          'X-Title': 'Readest AI Insight',
-        },
-      };
+      let response: Response;
 
-      const url = isTauriAppPlatform()
-        ? `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`
-        : '/api/llm/translate';
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testPayload),
-        signal: controller.signal,
-      });
+      if (isTauriAppPlatform()) {
+        const httpFetch = getAIFetch();
+        const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`;
+        response = await httpFetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.apiKey}`,
+            'HTTP-Referer': 'readest',
+            'X-Title': 'Readest AI Insight',
+          },
+          body: JSON.stringify({
+            model: config.model || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: 'Translate hello to French.' }],
+            max_tokens: 32,
+          }),
+          signal: controller.signal,
+        });
+      } else {
+        const testPayload = {
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl.replace(/\/$/, ''),
+          apiPath: config.apiPath ?? '/v1/chat/completions',
+          model: config.model || 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Translate hello to French.' }],
+          max_tokens: 32,
+          headers: {
+            'HTTP-Referer': 'readest',
+            'X-Title': 'Readest AI Insight',
+          },
+        };
+        const url = `${getAPIBaseUrl()}/llm/translate`;
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testPayload),
+          signal: controller.signal,
+        });
+      }
 
       clearTimeout(timeout);
 

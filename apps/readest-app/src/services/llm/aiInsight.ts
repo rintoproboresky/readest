@@ -1,3 +1,6 @@
+import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { getAIFetch } from '@/services/ai/utils/httpFetch';
+
 export interface AIInsightAlternative {
   translation: string;
   usage: string;
@@ -50,27 +53,54 @@ async function callProvider(
 ): Promise<AIInsightResult> {
   const { system, user } = buildWordInsightPrompt(word, sourceLang, targetLang);
 
-  const response = await fetch('/api/llm/translate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal,
-    body: JSON.stringify({
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl.replace(/\/$/, ''),
-      apiPath: config.apiPath ?? '/v1/chat/completions',
-      model: config.model || 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      temperature: 0.3,
-      max_tokens: 512,
+  let response: Response;
+
+  if (isTauriAppPlatform()) {
+    const httpFetch = getAIFetch();
+    const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`;
+    response = await httpFetch(url, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`,
         'HTTP-Referer': 'readest',
         'X-Title': 'Readest AI Insight',
       },
-    }),
-  });
+      body: JSON.stringify({
+        model: config.model || 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.3,
+        max_tokens: 512,
+      }),
+      signal,
+    });
+  } else {
+    const url = `${getAPIBaseUrl()}/llm/translate`;
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+      body: JSON.stringify({
+        apiKey: config.apiKey,
+        baseUrl: config.baseUrl.replace(/\/$/, ''),
+        apiPath: config.apiPath ?? '/v1/chat/completions',
+        model: config.model || 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.3,
+        max_tokens: 512,
+        headers: {
+          'HTTP-Referer': 'readest',
+          'X-Title': 'Readest AI Insight',
+        },
+      }),
+    });
+  }
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) throw new Error('Invalid API key');

@@ -38,6 +38,12 @@
       "allow": [
         {
           "path": "$APPDATA/settings.json"
+        },
+        {
+          "path": "$APPDATA/Readest"
+        },
+        {
+          "path": "$APPDATA/Readest/**/*"
         }
       ]
     },
@@ -46,6 +52,12 @@
       "allow": [
         {
           "path": "$APPDATA/settings.json"
+        },
+        {
+          "path": "$APPDATA/Readest"
+        },
+        {
+          "path": "$APPDATA/Readest/**/*"
         }
       ]
     },

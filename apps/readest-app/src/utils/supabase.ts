@@ -5,12 +5,16 @@ const supabaseUrl =
   getRuntimeConfig()?.supabaseUrl ||
   process.env['SUPABASE_URL'] ||
   process.env['NEXT_PUBLIC_SUPABASE_URL'] ||
-  atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64']!);
+  (process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64']
+    ? atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64'])
+    : 'https://placeholder.supabase.co');
 const supabaseAnonKey =
   getRuntimeConfig()?.supabaseAnonKey ||
   process.env['SUPABASE_ANON_KEY'] ||
   process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
-  atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64']!);
+  (process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64']
+    ? atob(process.env['NEXT_PUBLIC_DEFAULT_SUPABASE_KEY_BASE64'])
+    : 'placeholder-anon-key');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

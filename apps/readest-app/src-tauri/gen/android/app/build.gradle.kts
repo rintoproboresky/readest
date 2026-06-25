@@ -96,4 +96,32 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
 }
 
+// Remove duplicated assets after Tauri CLI copies them.
+// Tauri CLI copies frontendDist to both assets/ and assets/www/,
+// plus creates nested self-referencing directories (e.g. _next/_next/).
+// This task cleans up those duplicates before APK packaging.
+tasks.register("cleanupDuplicateAssets") {
+    doLast {
+        val assetsDir = file("$projectDir/src/main/assets")
+        if (!assetsDir.exists()) return@doLast
+
+        // Remove the legacy www/ duplicate (Tauri v1 path)
+        file("$assetsDir/www").deleteRecursively()
+
+        // Remove nested self-referencing directories: X/X/
+        assetsDir.listFiles()?.filter { it.isDirectory }?.forEach { dir ->
+            val nested = file("${dir.absolutePath}/${dir.name}")
+            if (nested.exists()) {
+                nested.deleteRecursively()
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+        finalizedBy("cleanupDuplicateAssets")
+    }
+}
+
 apply(from = "tauri.build.gradle.kts")

@@ -73,6 +73,11 @@ export const useSafeAreaInsets = () => {
   useEffect(() => {
     onUpdateInsets();
 
+    // Delayed retries to capture late layout passes on Android/iOS
+    const timers = [300, 800, 1500].map((delay) =>
+      setTimeout(onUpdateInsets, delay)
+    );
+
     // Listen for orientation changes
     if (window.screen?.orientation) {
       window.screen.orientation.addEventListener('change', onUpdateInsets);
@@ -95,6 +100,7 @@ export const useSafeAreaInsets = () => {
     window.addEventListener('focus', handleFocus);
 
     return () => {
+      timers.forEach(clearTimeout);
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
       } else {

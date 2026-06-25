@@ -1,4 +1,5 @@
 import type { EmbeddingModel } from 'ai';
+import { getAPIBaseUrl } from '@/services/environment';
 
 interface ProxiedEmbeddingOptions {
   apiKey: string;
@@ -16,7 +17,7 @@ export function createProxiedEmbeddingModel(options: ProxiedEmbeddingOptions): E
     supportsParallelCalls: false,
 
     async doEmbed({ values }: { values: string[] }) {
-      const response = await fetch('/api/ai/embed', {
+      const response = await fetch(`${getAPIBaseUrl()}/ai/embed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
