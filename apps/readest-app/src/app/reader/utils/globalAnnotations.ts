@@ -91,6 +91,8 @@ function* findTextRanges(doc: Document, text: string): Generator<Range> {
       },
     });
 
+  const isWordChar = (ch: string) => /[\p{L}\p{N}_]/u.test(ch);
+
   const tryWith = function* (needle: string): Generator<Range> {
     if (!needle) return;
     const walker = buildWalker();
@@ -102,6 +104,12 @@ function* findTextRanges(doc: Document, text: string): Generator<Range> {
       while (from <= data.length - needle.length) {
         const i = data.indexOf(needle, from);
         if (i === -1) break;
+        const before = i > 0 ? data.charAt(i - 1) : ' ';
+        const after = i + needle.length < data.length ? data.charAt(i + needle.length) : ' ';
+        if (isWordChar(before) || isWordChar(after)) {
+          from = i + 1;
+          continue;
+        }
         const range = doc.createRange();
         try {
           range.setStart(node, i);
