@@ -31,6 +31,9 @@ export function buildAnnotationIndex(booknotes: BookNote[]): AnnotationIndex {
     if (item.deletedAt) continue;
     if (item.type !== 'annotation' && item.type !== 'translation') continue;
     if (item.type === 'translation') {
+      if (item.global) {
+        globals.push(item);
+      }
       const spine = getCfiSpinePrefix(item.cfi);
       if (!spine) continue;
       const bucket = bySection.get(spine);

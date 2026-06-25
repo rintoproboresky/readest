@@ -93,8 +93,9 @@ const AIInsightNotePopup: React.FC<AIInsightNotePopupProps> = ({
         onDismiss();
       }}
     >
-      <div className='flex max-h-[320px] flex-col gap-2 overflow-y-auto p-3'>
-        <div className='flex items-center gap-2 border-b border-base-200 pb-2'>
+      <div className='flex max-h-[320px] flex-col p-3'>
+        <div className='flex flex-col gap-2 overflow-y-auto'>
+        <div className='flex items-center gap-2 border-b border-base-200 pb-2 shrink-0'>
           <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
           <span className='text-base-content/40 text-xs'>&ldquo;{text}&rdquo;</span>
         </div>
@@ -146,7 +147,8 @@ const AIInsightNotePopup: React.FC<AIInsightNotePopupProps> = ({
             />
           </div>
         )}
-        <div className='flex items-center gap-2 border-t border-base-200 pt-2'>
+        </div>
+        <div className='flex items-center gap-2 border-t border-base-200 pt-2 mt-2 shrink-0'>
           {editing ? (
             <>
               <button

@@ -404,6 +404,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           note: '',
           style: (transStyle as 'underline' | 'squiggly') || 'underline',
           color: transColor || '#0891b2',
+          global: true,
           aiInsight,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -682,8 +683,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { booknotes = [] } = config;
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+    const transCfi = isSyntheticGlobalValue(rawValue) ? sourceCfiFromSyntheticValue(rawValue) : rawValue;
     const translation = booknotes.find(
-      (n) => n.type === 'translation' && !n.deletedAt && n.cfi === rawValue,
+      (n) => n.type === 'translation' && !n.deletedAt && n.cfi === transCfi,
     );
     if (translation?.translation) {
       const sel = {
@@ -691,7 +693,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         annotated: false,
         text: translation.text ?? '',
         note: '',
-        cfi: rawValue,
+        cfi: transCfi,
         index,
         range,
         page: progress?.page ?? 0,
@@ -700,7 +702,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setTranslationNoteData({
         text: translation.text ?? rawValue,
         translation: translation.translation,
-        cfi: rawValue,
+        cfi: transCfi,
         style: (translation.style as 'underline' | 'squiggly') || 'underline',
         color: translation.color || '#0891b2',
         aiInsight: translation.aiInsight,
@@ -2017,6 +2019,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           onDiscard={() => {
             if (aiInsightWord?.cfi) {
               handleDeleteTranslation(aiInsightWord.cfi);
+            }
+          }}
+          onEditTranslation={(translation, style, color) => {
+            if (aiInsightWord) {
+              const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
+              if (noteCfi) {
+                handleSaveTranslation(aiInsightWord.text, translation, style, color, noteCfi);
+              }
             }
           }}
         />

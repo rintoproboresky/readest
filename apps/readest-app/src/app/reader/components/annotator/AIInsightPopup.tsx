@@ -4,7 +4,8 @@ import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
 import { getAIInsight, AIInsightResult } from '@/services/llm/aiInsight';
 import { useSettingsStore } from '@/store/settingsStore';
-import { PiArrowsClockwise, PiX } from 'react-icons/pi';
+import { PiArrowsClockwise, PiPencilSimple, PiTrash } from 'react-icons/pi';
+import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
 
 interface AIInsightPopupProps {
   word: string;
@@ -18,6 +19,7 @@ interface AIInsightPopupProps {
   onSelectAlternative?: (translation: string) => void;
   onSaveFullResult?: (result: AIInsightResult) => void;
   onDiscard?: () => void;
+  onEditTranslation?: (translation: string, style?: TranslationStyle, color?: string) => void;
 }
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
@@ -34,6 +36,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   onSelectAlternative,
   onSaveFullResult,
   onDiscard,
+  onEditTranslation,
 }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
@@ -42,7 +45,34 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [spinning, setSpinning] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+  const [editStyle, setEditStyle] = useState<TranslationStyle>('underline');
+  const [editColor, setEditColor] = useState('#0891b2');
   const autoSaved = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [editing]);
+
+  const handleEditSave = () => {
+    if (editValue.trim()) {
+      onEditTranslation?.(editValue.trim(), editStyle, editColor);
+    }
+    setEditing(false);
+    onDismiss();
+  };
+
+  const handleEditCancel = () => {
+    setEditing(false);
+    setEditValue(result?.mainTranslation ?? '');
+    setEditStyle('underline');
+    setEditColor('#0891b2');
+  };
 
   useEffect(() => {
     if (loadingState === 'success' && result && !autoSaved.current) {
@@ -95,9 +125,10 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
       height={height}
       onDismiss={onDismiss}
     >
-      <div className='flex max-h-[320px] flex-col gap-2 overflow-y-auto p-3'>
+      <div className='flex max-h-[320px] flex-col p-3'>
+        <div className='flex flex-col gap-2 overflow-y-auto'>
         {/* Header */}
-        <div className='flex items-center justify-between border-b border-base-200 pb-2'>
+        <div className='flex items-center justify-between border-b border-base-200 pb-2 shrink-0'>
           <div className='flex items-center gap-2'>
             <span className='text-base-content/80 text-xs font-semibold'>{_('AI Insight')}</span>
             <span className='text-base-content/40 text-xs'>
@@ -115,19 +146,6 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
             />
           </button>
         </div>
-
-        {loadingState === 'success' && result && (
-          <div className='flex items-center justify-between rounded bg-primary/10 px-2.5 py-1.5'>
-            <span className='text-[10px] font-medium text-primary'>{_('Insight saved')}</span>
-            <button
-              className='btn btn-ghost btn-xs p-0.5 text-base-content/40 hover:text-error'
-              onClick={onDiscard}
-              title={_('Discard')}
-            >
-              <PiX className='text-sm' />
-            </button>
-          </div>
-        )}
 
         {/* Loading */}
         {loadingState === 'loading' && (
@@ -150,7 +168,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         )}
 
         {/* Success */}
-        {loadingState === 'success' && result && (
+        {loadingState === 'success' && result && !editing && (
           <>
             {/* Main Translation */}
             <button
@@ -207,6 +225,90 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
             )}
           </>
         )}
+
+        {/* Edit mode */}
+        {editing && result && (
+          <>
+            {/* Translation textarea */}
+            <div className='w-full rounded-md bg-base-200/50 px-3 py-2'>
+              <span className='text-base-content/50 text-xs font-medium'>{_('Translation')}</span>
+              <textarea
+                ref={textareaRef}
+                className='textarea textarea-bordered text-base text-base-content font-medium w-full resize-none mt-1'
+                rows={3}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              />
+            </div>
+            {/* Style picker */}
+            <div className='flex flex-col gap-2'>
+              <span className='text-xs font-medium text-base-content/50'>{_('Style')}</span>
+              <TranslationStylePicker
+                style={editStyle}
+                color={editColor}
+                onChange={(s, c) => {
+                  setEditStyle(s);
+                  setEditColor(c);
+                }}
+              />
+            </div>
+          </>
+        )}
+
+        </div>
+        {/* Footer */}
+        <div className='flex items-center gap-2 border-t border-base-200 pt-2 mt-2 shrink-0'>
+          {editing ? (
+            <>
+              <button
+                className='btn btn-ghost btn-xs text-base-content/60 hover:text-base-content'
+                onClick={handleEditCancel}
+              >
+                {_('Cancel')}
+              </button>
+              <button
+                className='btn btn-primary btn-xs'
+                onClick={handleEditSave}
+                disabled={!editValue.trim()}
+              >
+                {_('Save')}
+              </button>
+            </>
+          ) : loadingState === 'success' && result ? (
+            <>
+              <button
+                className='btn btn-ghost btn-xs text-base-content/60 hover:text-base-content'
+                onClick={() => {
+                  setEditValue(result.mainTranslation);
+                  setEditStyle('underline');
+                  setEditColor('#0891b2');
+                  setEditing(true);
+                }}
+                title={_('Edit')}
+              >
+                <PiPencilSimple className='text-xs' />
+              </button>
+              <button
+                className='btn btn-ghost btn-xs text-base-content/60 hover:text-error'
+                onClick={onDiscard}
+                title={_('Delete')}
+              >
+                <PiTrash className='text-xs' />
+              </button>
+              <div className='flex-1' />
+              <button
+                className='btn btn-primary btn-xs gap-1'
+                onClick={fetchInsight}
+                disabled={spinning}
+                title={_('Regenerate')}
+              >
+                <PiArrowsClockwise
+                  className={`text-xs ${spinning ? 'animate-spin' : ''}`}
+                />
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
     </Popup>
   );

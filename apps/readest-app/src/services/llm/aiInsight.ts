@@ -89,12 +89,12 @@ export async function getAIInsight(
   word: string,
   sourceLang: string,
   targetLang: string,
-  llmConfig: AIConfig & { fallbacks?: Array<{ apiKey: string; baseUrl: string; apiPath?: string; model: string }> },
+  llmConfig: AIConfig & { fallbacks?: Array<{ apiKey: string; baseUrl: string; apiPath?: string; model: string; enabled?: boolean }> },
 ): Promise<AIInsightResult> {
   const TIMEOUT_MS = 15_000;
   const configs: AIConfig[] = [
     { apiKey: llmConfig.apiKey, model: llmConfig.model, baseUrl: llmConfig.baseUrl, apiPath: llmConfig.apiPath },
-    ...(llmConfig.fallbacks ?? []).map((f) => ({
+    ...(llmConfig.fallbacks ?? []).filter((f) => f.enabled !== false).map((f) => ({
       apiKey: f.apiKey,
       model: f.model,
       baseUrl: f.baseUrl,

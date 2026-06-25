@@ -80,6 +80,21 @@ const Popup = ({
 
   useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
+  useEffect(() => {
+    if (!onDismiss || !isOpen) return;
+    const handler = (e: Event) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onDismiss();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [onDismiss, isOpen]);
+
   const popupPadding = useResponsiveSize(10);
   let availableHeight = window.innerHeight - 2 * popupPadding;
   if (trianglePosition?.dir === 'up') {

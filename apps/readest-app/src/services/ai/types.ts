@@ -56,6 +56,7 @@ export interface AISettings {
       baseUrl: string;
       apiPath?: string;
       model: string;
+      enabled?: boolean;
     }>;
   };
 

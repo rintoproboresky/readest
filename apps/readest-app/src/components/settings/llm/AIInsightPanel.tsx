@@ -16,8 +16,15 @@ interface FallbackEntry {
   apiPath: string;
   baseUrl: string;
   model: string;
+  enabled?: boolean;
 }
 type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
+
+interface TestResult {
+  label: string;
+  status: ConnectionStatus;
+  message?: string;
+}
 
 const AIInsightPanel: React.FC = () => {
   const _ = useTranslation();
@@ -37,9 +44,11 @@ const AIInsightPanel: React.FC = () => {
     baseUrl: f.baseUrl ?? '',
     apiPath: f.apiPath ?? '/chat/completions',
     model: f.model ?? '',
+    enabled: f.enabled ?? true,
   })));
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
 
   const syncedFromStore = useRef(false);
 
@@ -60,6 +69,7 @@ const AIInsightPanel: React.FC = () => {
         baseUrl: f.baseUrl ?? '',
         apiPath: f.apiPath ?? '/chat/completions',
         model: f.model ?? '',
+        enabled: f.enabled ?? true,
       })));
     }
   }, [llmCfg]);
@@ -123,7 +133,7 @@ const AIInsightPanel: React.FC = () => {
   const handleAddFallback = () => {
     setFallbacks((prev) => [
       ...prev,
-      { provider: 'openai', apiKey: '', baseUrl: '', apiPath: '/chat/completions', model: '' },
+      { provider: 'openai', apiKey: '', baseUrl: '', apiPath: '/chat/completions', model: '', enabled: true },
     ]);
   };
 
@@ -147,11 +157,11 @@ const AIInsightPanel: React.FC = () => {
     });
   };
 
-  const handleFallbackChange = (index: number, field: keyof FallbackEntry, value: string) => {
+  const handleFallbackChange = (index: number, field: keyof FallbackEntry, value: string | boolean) => {
     setFallbacks((prev) => {
       const next = [...prev];
       if (next[index]) {
-        next[index] = { ...next[index]!, [field]: value };
+        next[index] = { ...next[index]!, [field]: value } as FallbackEntry;
       }
       return next;
     });
@@ -170,6 +180,7 @@ const AIInsightPanel: React.FC = () => {
       baseUrl: f.baseUrl,
       apiPath: f.apiPath,
       model: f.model,
+      enabled: f.enabled ?? true,
     })),
   }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks]);
 
@@ -195,20 +206,20 @@ const AIInsightPanel: React.FC = () => {
     eventDispatcher.dispatch('toast', { type: 'success', message: _('AI Insight configuration saved') });
   };
 
-  const handleTestConnection = async () => {
-    setConnectionStatus('testing');
-    setErrorMessage('');
-
+  const testSingleProvider = async (
+    label: string,
+    config: { apiKey: string; baseUrl: string; apiPath?: string; model?: string },
+  ): Promise<TestResult> => {
     const TIMEOUT_MS = 15_000;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     try {
       const testPayload = {
-        apiKey,
-        baseUrl: baseUrl.replace(/\/$/, ''),
-        apiPath,
-        model: model || 'gpt-4o-mini',
+        apiKey: config.apiKey,
+        baseUrl: config.baseUrl.replace(/\/$/, ''),
+        apiPath: config.apiPath ?? '/v1/chat/completions',
+        model: config.model || 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'Translate hello to French.' }],
         max_tokens: 32,
         headers: {
@@ -218,7 +229,7 @@ const AIInsightPanel: React.FC = () => {
       };
 
       const url = isTauriAppPlatform()
-        ? `${baseUrl.replace(/\/$/, '')}${apiPath ?? '/v1/chat/completions'}`
+        ? `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`
         : '/api/llm/translate';
 
       const response = await fetch(url, {
@@ -231,24 +242,47 @@ const AIInsightPanel: React.FC = () => {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error(_('Invalid API key'));
-        }
+        if (response.status === 401 || response.status === 403) throw new Error(_('Invalid API key'));
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
       const content = data?.choices?.[0]?.message?.content;
-      if (!content) {
-        throw new Error(_('Unexpected response format'));
-      }
+      if (!content) throw new Error(_('Unexpected response format'));
 
-      setConnectionStatus('success');
+      return { label, status: 'success' };
     } catch (err) {
       clearTimeout(timeout);
-      setConnectionStatus('error');
-      setErrorMessage((err as Error).message || _('Connection failed'));
+      return { label, status: 'error', message: (err as Error).message || _('Connection failed') };
     }
+  };
+
+  const handleTestConnection = async () => {
+    setConnectionStatus('testing');
+    setErrorMessage('');
+
+    const providers: { label: string; apiKey: string; baseUrl: string; apiPath?: string; model?: string }[] = [
+      { label: model || 'gpt-4o-mini', apiKey, baseUrl, apiPath, model },
+      ...fallbacks.filter((fb) => fb.enabled !== false).map((fb, i) => ({
+        label: `${_('Fallback')} ${i + 1}: ${fb.model || 'gpt-4o-mini'}`,
+        apiKey: fb.apiKey,
+        baseUrl: fb.baseUrl,
+        apiPath: fb.apiPath,
+        model: fb.model,
+      })),
+    ].filter((p) => p.apiKey);
+
+    setTestResults(providers.map((p) => ({ label: p.label, status: 'testing' as ConnectionStatus })));
+
+    let anySuccess = false;
+    for (const provider of providers) {
+      const result = await testSingleProvider(provider.label, provider);
+      setTestResults((prev) => prev.map((r) => (r.label === result.label ? result : r)));
+      if (result.status === 'success') anySuccess = true;
+    }
+
+    setConnectionStatus(anySuccess ? 'success' : 'error');
+    if (!anySuccess) setErrorMessage(_('All providers failed'));
   };
 
   return (
@@ -352,11 +386,19 @@ const AIInsightPanel: React.FC = () => {
         {fallbacks.length > 0 && (
           <div className='flex flex-col gap-2 px-4 pb-2'>
             {fallbacks.map((fb, i) => (
-              <div key={i} className='rounded-md border border-base-200 bg-base-100/50 p-2'>
+              <div key={i} className={`rounded-md border p-2 ${fb.enabled === false ? 'border-base-200/40 bg-base-100/20 opacity-50' : 'border-base-200 bg-base-100/50'}`}>
                 <div className='mb-1.5 flex items-center justify-between'>
-                  <span className='text-[10px] font-medium text-base-content/50'>
-                    {_('Fallback')} #{i + 1}
-                  </span>
+                  <label className='flex items-center gap-1.5 cursor-pointer'>
+                    <input
+                      type='checkbox'
+                      className='checkbox checkbox-xs'
+                      checked={fb.enabled !== false}
+                      onChange={(e) => handleFallbackChange(i, 'enabled', e.target.checked)}
+                    />
+                    <span className='text-[10px] font-medium text-base-content/50'>
+                      {_('Fallback')} #{i + 1}
+                    </span>
+                  </label>
                   <button className='btn btn-ghost btn-xs text-error' onClick={() => handleRemoveFallback(i)}>
                     <PiTrash className='text-sm' />
                   </button>
@@ -404,22 +446,39 @@ const AIInsightPanel: React.FC = () => {
       </div>
 
       <SettingsRow label={''}>
-        <div className='flex items-center gap-2'>
-          <button
-            className='btn btn-outline btn-sm'
-            onClick={handleTestConnection}
-            disabled={connectionStatus === 'testing' || !apiKey}
-          >
-            {connectionStatus === 'testing' ? _('Testing...') : _('Test Connection')}
-          </button>
-          <button className='btn btn-primary btn-sm' onClick={handleSave}>
-            {_('Save')}
-          </button>
-          {connectionStatus === 'success' && (
-            <span className='text-success text-sm'>{_('Connected')}</span>
-          )}
-          {connectionStatus === 'error' && (
-            <span className='text-error text-sm'>{errorMessage}</span>
+        <div className='flex flex-col gap-2'>
+          <div className='flex items-center gap-2'>
+            <button
+              className='btn btn-outline btn-sm'
+              onClick={handleTestConnection}
+              disabled={connectionStatus === 'testing' || !apiKey}
+            >
+              {connectionStatus === 'testing' ? _('Testing...') : _('Test Connection')}
+            </button>
+            <button className='btn btn-primary btn-sm' onClick={handleSave}>
+              {_('Save')}
+            </button>
+            {connectionStatus === 'success' && (
+              <span className='text-success text-sm'>{_('Connected')}</span>
+            )}
+            {connectionStatus === 'error' && (
+              <span className='text-error text-sm'>{errorMessage}</span>
+            )}
+          </div>
+          {testResults.length > 0 && (
+            <div className='flex flex-col gap-1'>
+              {testResults.map((r, i) => (
+                <div key={i} className='flex items-center gap-2 text-xs'>
+                  <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                    r.status === 'success' ? 'bg-success' : r.status === 'error' ? 'bg-error' : 'bg-warning'
+                  }`} />
+                  <span className='text-base-content/70'>{r.label}</span>
+                  {r.status === 'success' && <span className='text-success'>{_('OK')}</span>}
+                  {r.status === 'error' && <span className='text-error'>{r.message}</span>}
+                  {r.status === 'testing' && <span className='text-warning'>{_('Testing...')}</span>}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </SettingsRow>

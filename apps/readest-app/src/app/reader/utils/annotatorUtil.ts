@@ -4,6 +4,7 @@ import { uniqueId } from '@/utils/misc';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
+import { removeGlobalAnnotationOverlays } from './globalAnnotations';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -188,6 +189,7 @@ export function removeBookNoteOverlays(view: FoliateView | null, note: BookNote)
   if (!view) return;
   if (note.type === 'translation') {
     view.addAnnotation({ ...note, value: note.cfi }, true);
+    if (note.global) removeGlobalAnnotationOverlays(view, note);
     return;
   }
   if (note.type !== 'annotation') return;
