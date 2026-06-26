@@ -273,9 +273,22 @@ const AIInsightPanel: React.FC = () => {
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) throw new Error(_('Invalid API key'));
         
+        let errMsg: string | null = null;
         try {
-          const errData = await response.json();
-          const errMsg = errData?.error?.message ?? errData?.error ?? null;
+          const text = await response.text();
+          try {
+            const errData = JSON.parse(text);
+            errMsg =
+              errData?.error?.message ??
+              errData?.error ??
+              errData?.message ??
+              errData?.msg ??
+              null;
+          } catch {
+            if (text && text.trim().length < 120) {
+              errMsg = text.trim();
+            }
+          }
           if (errMsg) throw new Error(`${errMsg} (HTTP ${response.status})`);
         } catch (e) {
           if (e instanceof Error && e.message.includes('HTTP')) throw e;

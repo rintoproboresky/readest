@@ -207,6 +207,61 @@ describe('AI Insight Service', () => {
     expect(mockWebFetch).toHaveBeenCalledTimes(2);
   });
 
+  it('parses generic JSON error structures', async () => {
+    vi.spyOn(env, 'isTauriAppPlatform').mockReturnValue(false);
+
+    mockWebFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({ msg: 'Quota exceeded' }),
+    } as any);
+
+    const promise = getAIInsight('hello', 'en', 'id', {
+      apiKey: 'test-key',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+    });
+
+    await expect(promise).rejects.toThrow(/Quota exceeded/i);
+  });
+
+  it('parses short plain-text error messages', async () => {
+    vi.spyOn(env, 'isTauriAppPlatform').mockReturnValue(false);
+
+    mockWebFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      text: async () => 'Bad Gateway from Cloudflare',
+    } as any);
+
+    const promise = getAIInsight('hello', 'en', 'id', {
+      apiKey: 'test-key',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+    });
+
+    await expect(promise).rejects.toThrow(/Bad Gateway from Cloudflare/i);
+  });
+
+  it('ignores long HTML error pages and uses fallback HTTP code', async () => {
+    vi.spyOn(env, 'isTauriAppPlatform').mockReturnValue(false);
+
+    const longHtml = '<html><body>' + 'a'.repeat(200) + '</body></html>';
+    mockWebFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => longHtml,
+    } as any);
+
+    const promise = getAIInsight('hello', 'en', 'id', {
+      apiKey: 'test-key',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+    });
+
+    await expect(promise).rejects.toThrow(/API error \(HTTP 500\)/i);
+  });
+
   it('aborts the request when signal is aborted', async () => {
     vi.spyOn(env, 'isTauriAppPlatform').mockReturnValue(false);
 
