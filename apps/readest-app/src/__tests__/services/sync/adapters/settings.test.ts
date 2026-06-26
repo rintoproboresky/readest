@@ -100,6 +100,7 @@ describe('settingsAdapter', () => {
       'readwise.accessToken',
       'hardcover.accessToken',
       'aiSettings.llm.apiKey',
+      'aiSettings.llm.fallbacks',
     ]);
   });
 

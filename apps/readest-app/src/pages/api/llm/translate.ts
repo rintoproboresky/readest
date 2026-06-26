@@ -29,20 +29,46 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(400).json({ error: 'Messages array is required' });
   }
 
-  const apiUrl = `${baseUrl.replace(/\/$/, '')}${apiPath ?? '/v1/chat/completions'}`;
+  const isAnthropic = baseUrl.includes('api.anthropic.com') || (apiPath ?? '').includes('/messages');
+
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}${apiPath ?? (isAnthropic ? '/v1/messages' : '/v1/chat/completions')}`;
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`,
-    ...extraHeaders,
   };
 
-  const requestBody = {
-    model: model || 'gpt-4o-mini',
-    messages,
-    temperature: temperature ?? 0.3,
-    max_tokens: max_tokens ?? 64,
-  };
+  let requestBody: any;
+
+  if (isAnthropic) {
+    if (extraHeaders) {
+      Object.assign(requestHeaders, extraHeaders);
+    }
+    requestHeaders['x-api-key'] = apiKey;
+    requestHeaders['anthropic-version'] = '2023-06-01';
+
+    const systemMsg = messages.find((m: any) => m.role === 'system');
+    const systemPrompt = systemMsg ? systemMsg.content : undefined;
+    const userMessages = messages.filter((m: any) => m.role !== 'system');
+
+    requestBody = {
+      model: model || 'claude-3-5-sonnet-latest',
+      system: systemPrompt,
+      messages: userMessages,
+      temperature: temperature ?? 0.3,
+      max_tokens: max_tokens ?? 512,
+    };
+  } else {
+    requestHeaders['Authorization'] = `Bearer ${apiKey}`;
+    if (extraHeaders) {
+      Object.assign(requestHeaders, extraHeaders);
+    }
+    requestBody = {
+      model: model || 'gpt-4o-mini',
+      messages,
+      temperature: temperature ?? 0.3,
+      max_tokens: max_tokens ?? 64,
+    };
+  }
 
   try {
     const controller = new AbortController();

@@ -113,7 +113,7 @@ const AIInsightNotePopup: React.FC<AIInsightNotePopupProps> = ({
             <div className='mt-0.5 text-sm font-semibold text-base-content'>{translation}</div>
           )}
         </div>
-        {!editing && aiInsight && aiInsight.alternatives.length > 0 && (
+        {!editing && aiInsight && Array.isArray(aiInsight.alternatives) && aiInsight.alternatives.length > 0 && (
           <div className='flex flex-col gap-1.5'>
             <span className='text-[10px] font-medium text-base-content/50'>{_('Alternatives')}</span>
             {aiInsight.alternatives.map((alt, i) => (

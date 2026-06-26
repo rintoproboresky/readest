@@ -53,20 +53,37 @@ async function callProvider(
 ): Promise<AIInsightResult> {
   const { system, user } = buildWordInsightPrompt(word, sourceLang, targetLang);
 
+  const isAnthropic =
+    config.baseUrl.includes('api.anthropic.com') ||
+    (config.apiPath ?? '').includes('/messages');
+
   let response: Response;
 
   if (isTauriAppPlatform()) {
     const httpFetch = getAIFetch();
-    const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`;
-    response = await httpFetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.apiKey}`,
-        'HTTP-Referer': 'readest',
-        'X-Title': 'Readest AI Insight',
-      },
-      body: JSON.stringify({
+    const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? (isAnthropic ? '/v1/messages' : '/v1/chat/completions')}`;
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    let body: any;
+
+    if (isAnthropic) {
+      headers['x-api-key'] = config.apiKey;
+      headers['anthropic-version'] = '2023-06-01';
+      body = {
+        model: config.model || 'claude-3-5-sonnet-latest',
+        system,
+        messages: [{ role: 'user', content: user }],
+        temperature: 0.3,
+        max_tokens: 512,
+      };
+    } else {
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
+      headers['HTTP-Referer'] = 'readest';
+      headers['X-Title'] = 'Readest AI Insight';
+      body = {
         model: config.model || 'gpt-4o-mini',
         messages: [
           { role: 'system', content: system },
@@ -74,7 +91,13 @@ async function callProvider(
         ],
         temperature: 0.3,
         max_tokens: 512,
-      }),
+      };
+    }
+
+    response = await httpFetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
       signal,
     });
   } else {
@@ -86,8 +109,8 @@ async function callProvider(
       body: JSON.stringify({
         apiKey: config.apiKey,
         baseUrl: config.baseUrl.replace(/\/$/, ''),
-        apiPath: config.apiPath ?? '/v1/chat/completions',
-        model: config.model || 'gpt-4o-mini',
+        apiPath: config.apiPath ?? (isAnthropic ? '/v1/messages' : '/v1/chat/completions'),
+        model: config.model || (isAnthropic ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini'),
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -105,11 +128,24 @@ async function callProvider(
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) throw new Error('Invalid API key');
     if (response.status === 429) throw new Error('Rate limited');
+    
+    try {
+      const errData = await response.json();
+      const errMsg = errData?.error?.message ?? errData?.error ?? null;
+      if (errMsg) throw new Error(`${errMsg} (HTTP ${response.status})`);
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('HTTP')) throw e;
+    }
+    
     throw new Error(`API error (HTTP ${response.status})`);
   }
 
   const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content ?? data?.choices?.[0]?.text ?? null;
+  const content =
+    data?.choices?.[0]?.message?.content ??
+    data?.choices?.[0]?.text ??
+    data?.content?.[0]?.text ??
+    null;
   if (!content) throw new Error('Empty response from API');
 
   return parseInsightResponse(content);
@@ -130,7 +166,7 @@ export async function getAIInsight(
       baseUrl: f.baseUrl,
       apiPath: f.apiPath,
     })),
-  ];
+  ].filter((cfg) => !!cfg.apiKey);
 
   let lastError: Error | null = null;
 
@@ -154,10 +190,17 @@ export async function getAIInsight(
 function parseInsightResponse(raw: string): AIInsightResult {
   let cleaned = raw.trim();
 
-  if (cleaned.startsWith('```')) {
-    const end = cleaned.indexOf('```', 3);
-    if (end !== -1) {
-      cleaned = cleaned.slice(cleaned.indexOf('\n', 3) + 1, end).trim();
+  // 1. Try to extract JSON from markdown code blocks
+  const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
+  const match = codeBlockRegex.exec(cleaned);
+  if (match && match[1]) {
+    cleaned = match[1].trim();
+  } else {
+    // 2. Fallback: extract only the outer-most curly braces
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      cleaned = cleaned.slice(start, end + 1);
     }
   }
 

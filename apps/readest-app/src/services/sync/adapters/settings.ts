@@ -68,6 +68,8 @@ export const SETTINGS_WHITELIST = [
   'aiSettings.llm.apiPath',
   'aiSettings.llm.model',
   'aiSettings.llm.systemPrompt',
+  'aiSettings.llm.targetLang',
+  'aiSettings.llm.fallbacks',
 ] as const;
 
 /**
@@ -90,6 +92,7 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'readwise.accessToken',
   'hardcover.accessToken',
   'aiSettings.llm.apiKey',
+  'aiSettings.llm.fallbacks',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];

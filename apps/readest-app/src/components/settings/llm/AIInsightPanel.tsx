@@ -185,16 +185,7 @@ const AIInsightPanel: React.FC = () => {
     })),
   }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks]);
 
-  useEffect(() => {
-    if (!settings.aiSettings) return;
-    if (!syncedFromStore.current) return;
-    const updated = { ...settings };
-    updated.aiSettings = {
-      ...updated.aiSettings,
-      llm: buildLlmConfig(),
-    };
-    setSettings(updated);
-  }, [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks, buildLlmConfig]);
+
 
   const handleSave = async () => {
     const updated = { ...settings };
@@ -215,33 +206,52 @@ const AIInsightPanel: React.FC = () => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+    const isAnthropic = config.baseUrl.includes('api.anthropic.com') || (config.apiPath ?? '').includes('/messages');
+
     try {
       let response: Response;
 
       if (isTauriAppPlatform()) {
         const httpFetch = getAIFetch();
-        const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? '/v1/chat/completions'}`;
-        response = await httpFetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.apiKey}`,
-            'HTTP-Referer': 'readest',
-            'X-Title': 'Readest AI Insight',
-          },
-          body: JSON.stringify({
+        const url = `${config.baseUrl.replace(/\/$/, '')}${config.apiPath ?? (isAnthropic ? '/v1/messages' : '/v1/chat/completions')}`;
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        let body: any;
+
+        if (isAnthropic) {
+          headers['x-api-key'] = config.apiKey;
+          headers['anthropic-version'] = '2023-06-01';
+          body = {
+            model: config.model || 'claude-3-5-sonnet-latest',
+            messages: [{ role: 'user', content: 'Translate hello to French.' }],
+            max_tokens: 32,
+          };
+        } else {
+          headers['Authorization'] = `Bearer ${config.apiKey}`;
+          headers['HTTP-Referer'] = 'readest';
+          headers['X-Title'] = 'Readest AI Insight';
+          body = {
             model: config.model || 'gpt-4o-mini',
             messages: [{ role: 'user', content: 'Translate hello to French.' }],
             max_tokens: 32,
-          }),
+          };
+        }
+
+        response = await httpFetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
       } else {
         const testPayload = {
           apiKey: config.apiKey,
           baseUrl: config.baseUrl.replace(/\/$/, ''),
-          apiPath: config.apiPath ?? '/v1/chat/completions',
-          model: config.model || 'gpt-4o-mini',
+          apiPath: config.apiPath ?? (isAnthropic ? '/v1/messages' : '/v1/chat/completions'),
+          model: config.model || (isAnthropic ? 'claude-3-5-sonnet-latest' : 'gpt-4o-mini'),
           messages: [{ role: 'user', content: 'Translate hello to French.' }],
           max_tokens: 32,
           headers: {
@@ -262,11 +272,20 @@ const AIInsightPanel: React.FC = () => {
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) throw new Error(_('Invalid API key'));
+        
+        try {
+          const errData = await response.json();
+          const errMsg = errData?.error?.message ?? errData?.error ?? null;
+          if (errMsg) throw new Error(`${errMsg} (HTTP ${response.status})`);
+        } catch (e) {
+          if (e instanceof Error && e.message.includes('HTTP')) throw e;
+        }
+
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      const content = data?.choices?.[0]?.message?.content;
+      const content = data?.choices?.[0]?.message?.content ?? data?.content?.[0]?.text;
       if (!content) throw new Error(_('Unexpected response format'));
 
       return { label, status: 'success' };

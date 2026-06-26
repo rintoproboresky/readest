@@ -112,10 +112,12 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
     }
   };
 
+  const apiKey = settings?.aiSettings?.llm?.apiKey;
   useEffect(() => {
-    void fetchInsight();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [word, sourceLang, targetLang]);
+    if (apiKey) {
+      void fetchInsight();
+    }
+  }, [word, sourceLang, targetLang, apiKey]);
 
   return (
     <Popup
@@ -182,7 +184,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
             </button>
 
             {/* Alternatives */}
-            {result.alternatives.length > 0 && (
+            {Array.isArray(result.alternatives) && result.alternatives.length > 0 && (
               <div className='flex flex-col gap-1.5'>
                 {result.alternatives.map((alt, i) => {
                   const isSelected = selectedIndex === i;
