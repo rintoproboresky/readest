@@ -1,0 +1,7 @@
+[sshd]
+enabled = true
+maxretry = 5
+bantime = 1h
+findtime = 10m
+action = %(action_)s
+         discord
