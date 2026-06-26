@@ -39,14 +39,16 @@ const AIInsightPanel: React.FC = () => {
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
   const [insightTargetLang, setInsightTargetLang] = useState(llmCfg?.targetLang ?? '');
-  const [fallbacks, setFallbacks] = useState<FallbackEntry[]>(() => (llmCfg?.fallbacks ?? []).map((f) => ({
-    provider: (f.provider as LLMProvider) || 'openai',
-    apiKey: f.apiKey ?? '',
-    baseUrl: f.baseUrl ?? '',
-    apiPath: f.apiPath ?? '/chat/completions',
-    model: f.model ?? '',
-    enabled: f.enabled ?? true,
-  })));
+  const [fallbacks, setFallbacks] = useState<FallbackEntry[]>(() => 
+    (Array.isArray(llmCfg?.fallbacks) ? llmCfg.fallbacks : []).map((f) => ({
+      provider: (f.provider as LLMProvider) || 'openai',
+      apiKey: f.apiKey ?? '',
+      baseUrl: f.baseUrl ?? '',
+      apiPath: f.apiPath ?? '/chat/completions',
+      model: f.model ?? '',
+      enabled: f.enabled ?? true,
+    }))
+  );
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -63,7 +65,7 @@ const AIInsightPanel: React.FC = () => {
     setApiPath(llmCfg.apiPath ?? '/chat/completions');
     setModel(llmCfg.model ?? '');
     setInsightTargetLang(llmCfg.targetLang ?? '');
-    if (llmCfg.fallbacks) {
+    if (Array.isArray(llmCfg.fallbacks)) {
       setFallbacks(llmCfg.fallbacks.map((f) => ({
         provider: (f.provider as LLMProvider) || 'openai',
         apiKey: f.apiKey ?? '',

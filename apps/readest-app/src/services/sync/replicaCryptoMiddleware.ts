@@ -43,7 +43,8 @@ export const encryptPackedFields = async (
     const value = packed[fieldName];
     if (value === undefined || value === null || value === '') continue;
     try {
-      packed[fieldName] = await session.encryptField(String(value));
+      const plaintext = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      packed[fieldName] = await session.encryptField(plaintext);
     } catch (err) {
       // Encryption failure on a single field shouldn't block the push of
       // the other fields. Drop this one and log.
@@ -194,7 +195,18 @@ export const decryptRowFields = async (
     }
     try {
       const plaintext = await session.decryptField(v as CipherEnvelope);
-      (envelope as { v: unknown }).v = plaintext;
+      let parsedValue: unknown = plaintext;
+      if (
+        (plaintext.startsWith('{') && plaintext.endsWith('}')) ||
+        (plaintext.startsWith('[') && plaintext.endsWith(']'))
+      ) {
+        try {
+          parsedValue = JSON.parse(plaintext);
+        } catch {
+          // Ignore parse errors, keep as plaintext string
+        }
+      }
+      (envelope as { v: unknown }).v = parsedValue;
     } catch (err) {
       const code = isSyncError(err) ? (err as SyncError).code : 'unknown';
       // Loud + uniformly prefixed so it's easy to grep in production

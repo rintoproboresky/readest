@@ -183,6 +183,25 @@ describe('replicaCryptoMiddleware', () => {
       await decryptRowFields(fields, undefined, session);
       expect(fields['password']).toBeDefined();
     });
+
+    test('JSON-serializes and parses objects/arrays round-trip', async () => {
+      await session.setup('pw');
+      const arrayVal = [{ provider: 'openai', apiKey: 'sk-123' }];
+      const packed: Record<string, unknown> = { fallbacks: arrayVal };
+      await encryptPackedFields(packed, ['fallbacks'], session);
+      
+      expect(isCipherEnvelope(packed['fallbacks'])).toBe(true);
+      
+      const fields: FieldsObject = {
+        fallbacks: wrapField(packed['fallbacks']),
+      };
+      
+      await decryptRowFields(fields, ['fallbacks'], session);
+      
+      const decrypted = (fields['fallbacks'] as { v: unknown }).v;
+      expect(decrypted).toEqual(arrayVal);
+      expect(Array.isArray(decrypted)).toBe(true);
+    });
   });
 
   describe('captureCipherTexts / cipherTextsChanged / collectDecryptSuccess', () => {

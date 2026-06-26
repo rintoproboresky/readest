@@ -174,7 +174,7 @@ export async function getAIInsight(
   const TIMEOUT_MS = 15_000;
   const configs: AIConfig[] = [
     { apiKey: llmConfig.apiKey, model: llmConfig.model, baseUrl: llmConfig.baseUrl, apiPath: llmConfig.apiPath },
-    ...(llmConfig.fallbacks ?? []).filter((f) => f.enabled !== false).map((f) => ({
+    ...(Array.isArray(llmConfig.fallbacks) ? llmConfig.fallbacks : []).filter((f) => f.enabled !== false).map((f) => ({
       apiKey: f.apiKey,
       model: f.model,
       baseUrl: f.baseUrl,
