@@ -82,7 +82,8 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
     }
   }, [loadingState, result, onSelectAlternative, onSaveFullResult]);
 
-  const fetchInsight = async () => {
+  const fetchInsight = async (signal?: unknown) => {
+    const activeSignal = signal instanceof AbortSignal ? signal : undefined;
     const llmConfig = settings?.aiSettings?.llm;
     if (!llmConfig?.apiKey) {
       setError(_('AI Insight not configured. Go to Settings → AI Insight.'));
@@ -101,10 +102,13 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         baseUrl: llmConfig.baseUrl,
         apiPath: llmConfig.apiPath,
         fallbacks: llmConfig.fallbacks,
-      });
+      }, activeSignal);
       setResult(insight);
       setLoadingState('success');
     } catch (err) {
+      if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted'))) {
+        return;
+      }
       setError((err as Error).message || _('Failed to get word insight'));
       setLoadingState('error');
     } finally {
@@ -114,9 +118,11 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
 
   const apiKey = settings?.aiSettings?.llm?.apiKey;
   useEffect(() => {
-    if (apiKey) {
-      void fetchInsight();
-    }
+    const controller = new AbortController();
+    void fetchInsight(controller.signal);
+    return () => {
+      controller.abort();
+    };
   }, [word, sourceLang, targetLang, apiKey]);
 
   return (
@@ -139,7 +145,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
           </div>
           <button
             className='btn btn-ghost btn-xs p-0.5'
-            onClick={fetchInsight}
+            onClick={() => void fetchInsight()}
             disabled={loadingState === 'loading'}
             title={_('Regenerate')}
           >
@@ -163,7 +169,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         {loadingState === 'error' && (
           <div className='flex flex-col items-center gap-2 py-3'>
             <span className='text-error text-xs'>{error}</span>
-            <button className='btn btn-outline btn-xs' onClick={fetchInsight}>
+            <button className='btn btn-outline btn-xs' onClick={() => void fetchInsight()}>
               {_('Retry')}
             </button>
           </div>
@@ -300,7 +306,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
               <div className='flex-1' />
               <button
                 className='btn btn-primary btn-xs gap-1'
-                onClick={fetchInsight}
+                onClick={() => void fetchInsight()}
                 disabled={spinning}
                 title={_('Regenerate')}
               >

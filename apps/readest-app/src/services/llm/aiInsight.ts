@@ -156,6 +156,7 @@ export async function getAIInsight(
   sourceLang: string,
   targetLang: string,
   llmConfig: AIConfig & { fallbacks?: Array<{ apiKey: string; baseUrl: string; apiPath?: string; model: string; enabled?: boolean }> },
+  signal?: AbortSignal,
 ): Promise<AIInsightResult> {
   const TIMEOUT_MS = 15_000;
   const configs: AIConfig[] = [
@@ -174,13 +175,34 @@ export async function getAIInsight(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+    const abortHandler = () => {
+      controller.abort();
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort();
+      } else {
+        signal.addEventListener('abort', abortHandler);
+      }
+    }
+
     try {
       const result = await callProvider(word, sourceLang, targetLang, cfg, controller.signal);
       clearTimeout(timeout);
+      if (signal) {
+        signal.removeEventListener('abort', abortHandler);
+      }
       return result;
     } catch (err) {
       clearTimeout(timeout);
+      if (signal) {
+        signal.removeEventListener('abort', abortHandler);
+      }
       lastError = err as Error;
+      if (signal?.aborted) {
+        throw err;
+      }
     }
   }
 
@@ -213,16 +235,19 @@ function parseInsightResponse(raw: string): AIInsightResult {
 
     return {
       mainTranslation: String(parsed.mainTranslation),
-      alternatives: parsed.alternatives.slice(0, 6).map(
-        (alt: Record<string, unknown>): AIInsightAlternative => ({
-          translation: String(alt['translation'] ?? ''),
-          usage: String(alt['usage'] ?? ''),
-          example: String(alt['example'] ?? ''),
-          confidence: (['high', 'medium', 'low'].includes(String(alt['confidence']))
-            ? String(alt['confidence'])
-            : 'medium') as AIInsightAlternative['confidence'],
-        }),
-      ),
+      alternatives: parsed.alternatives
+        .filter((alt: any) => alt && typeof alt === 'object')
+        .slice(0, 6)
+        .map(
+          (alt: Record<string, unknown>): AIInsightAlternative => ({
+            translation: String(alt['translation'] ?? ''),
+            usage: String(alt['usage'] ?? ''),
+            example: String(alt['example'] ?? ''),
+            confidence: (['high', 'medium', 'low'].includes(String(alt['confidence']))
+              ? String(alt['confidence'])
+              : 'medium') as AIInsightAlternative['confidence'],
+          }),
+        ),
       note: parsed.note ? String(parsed.note) : undefined,
     };
   } catch {
