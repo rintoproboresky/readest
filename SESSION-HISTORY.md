@@ -609,7 +609,7 @@ Implement LLM Word Insight feature (separate from translation), replace header-b
 ## Session 10 — 2026-06-26
 
 ### Goal
-Implement and deploy a suite of automated VPS monitoring scripts with Discord notifications, integrate Fail2ban security alerts, configure VPS system boot/restart notifications, set up automated weekly Docker storage maintenance, delete legacy bots (`tech_bot` and `douyin_watch`), and reclaim server SSD space.
+Implement and deploy a suite of automated VPS monitoring scripts with Discord notifications, integrate Fail2ban security alerts, configure VPS system boot/restart notifications, set up automated weekly Docker storage maintenance, delete legacy bots (`tech_bot` and `douyin_watch`), reclaim server SSD space, and optimize the Crypto Price Bot.
 
 ### Work Summary
 
@@ -633,13 +633,16 @@ Implement and deploy a suite of automated VPS monitoring scripts with Discord no
 - Stopped, disabled, and removed the legacy `douyin_monitor.service` systemd daemon on the VPS.
 - Deleted the `/home/ubuntu/tech_bot` and `/home/ubuntu/douyin_watch` directories to clean up the host storage.
 - Performed an immediate manual `docker system prune -af --volumes` on the VPS, which successfully reclaimed **21.6GB** of space, dropping disk usage from **81% to 29%**.
-- Verified test runs of all scripts: `backup.sh`, `container_monitor.sh`, `resource_monitor.sh`, `daily_report.sh`, and `boot_alert.sh` successfully delivered rich notifications to Discord.
+- Modified `crypto_price_bot.py` on the VPS to remove the redundant Groq AI call and output the script-formatted Discord update directly, saving API tokens and speeding up run times.
+- Verified test runs of all scripts: `backup.sh`, `container_monitor.sh`, `resource_monitor.sh`, `daily_report.sh`, `boot_alert.sh`, and `run_crypto_bot.sh` successfully delivered rich notifications to Discord.
 
 #### Key Decisions
 - Use `/tmp/container_states.json` to keep track of container statuses on the VPS. This allows the container monitor to alert only on transition (i.e., when a container fails, or when it comes back online) instead of spamming alerts.
 - Empty Google Drive trash using `rclone cleanup` to ensure that deleted backups don't count towards the user's Google Drive storage quota.
 - Integrates Fail2ban directly with Discord webhook using standard python web client requests to bypass Windows powershell CLI quote parsing bugs during testing.
 - Stop and delete systemd services before removing folders to ensure no broken/failed services are left running.
+- Bypass AI for simple text formatting tasks if Python script logic can perform the same formatting natively, which increases stability and eliminates external API dependencies.
+
 
 
 
