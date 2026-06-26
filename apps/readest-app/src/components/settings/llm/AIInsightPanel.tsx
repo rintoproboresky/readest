@@ -39,6 +39,7 @@ const AIInsightPanel: React.FC = () => {
   const [apiPath, setApiPath] = useState(llmCfg?.apiPath ?? '/chat/completions');
   const [model, setModel] = useState(llmCfg?.model ?? '');
   const [insightTargetLang, setInsightTargetLang] = useState(llmCfg?.targetLang ?? '');
+  const [useContext, setUseContext] = useState(llmCfg?.useContext ?? false);
   const [fallbacks, setFallbacks] = useState<FallbackEntry[]>(() => 
     (Array.isArray(llmCfg?.fallbacks) ? llmCfg.fallbacks : []).map((f) => ({
       provider: (f.provider as LLMProvider) || 'openai',
@@ -65,6 +66,7 @@ const AIInsightPanel: React.FC = () => {
     setApiPath(llmCfg.apiPath ?? '/chat/completions');
     setModel(llmCfg.model ?? '');
     setInsightTargetLang(llmCfg.targetLang ?? '');
+    setUseContext(llmCfg.useContext ?? false);
     if (Array.isArray(llmCfg.fallbacks)) {
       setFallbacks(llmCfg.fallbacks.map((f) => ({
         provider: (f.provider as LLMProvider) || 'openai',
@@ -177,6 +179,7 @@ const AIInsightPanel: React.FC = () => {
     apiPath,
     model,
     targetLang: insightTargetLang,
+    useContext,
     fallbacks: fallbacks.map((f) => ({
       provider: f.provider,
       apiKey: f.apiKey,
@@ -185,7 +188,7 @@ const AIInsightPanel: React.FC = () => {
       model: f.model,
       enabled: f.enabled ?? true,
     })),
-  }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, fallbacks]);
+  }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, useContext, fallbacks]);
 
 
 
@@ -407,6 +410,15 @@ const AIInsightPanel: React.FC = () => {
             </option>
           ))}
         </select>
+      </SettingsRow>
+
+      <SettingsRow label={_('Context-Aware Translation')} asLabel>
+        <input
+          type='checkbox'
+          className='checkbox checkbox-sm'
+          checked={useContext}
+          onChange={(e) => setUseContext(e.target.checked)}
+        />
       </SettingsRow>
 
       <div className='flex flex-col gap-2 py-3 pe-4'>

@@ -69,6 +69,7 @@ export const SETTINGS_WHITELIST = [
   'aiSettings.llm.model',
   'aiSettings.llm.systemPrompt',
   'aiSettings.llm.targetLang',
+  'aiSettings.llm.useContext',
   'aiSettings.llm.fallbacks',
 ] as const;
 

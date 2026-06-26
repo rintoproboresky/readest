@@ -21,7 +21,11 @@ interface AIConfig {
   apiPath?: string;
 }
 
-function buildWordInsightPrompt(word: string, sourceLang: string, targetLang: string) {
+function buildWordInsightPrompt(word: string, sourceLang: string, targetLang: string, context?: string) {
+  const contextInstruction = context
+    ? `\n- The word appears in this context: "${context}". Translate and explain the word specifically as it is used in this context.`
+    : '';
+
   return {
     system: `You are a literary assistant helping a reader understand a word or short phrase.
 
@@ -36,7 +40,7 @@ For the given input, return ONLY a JSON object with:
 
 Rules:
 - If the input is a phrase, translate it as a unit and note any idiomatic meaning
-- Examples must be natural, not constructed
+- Examples must be natural, not constructed${contextInstruction}
 - If the word is rare or archaic, note it
 - Return ONLY the JSON object, no other text`,
 
@@ -50,8 +54,9 @@ async function callProvider(
   targetLang: string,
   config: AIConfig,
   signal: AbortSignal,
+  context?: string,
 ): Promise<AIInsightResult> {
-  const { system, user } = buildWordInsightPrompt(word, sourceLang, targetLang);
+  const { system, user } = buildWordInsightPrompt(word, sourceLang, targetLang, context);
 
   const isAnthropic =
     config.baseUrl.includes('api.anthropic.com') ||
@@ -170,6 +175,7 @@ export async function getAIInsight(
   targetLang: string,
   llmConfig: AIConfig & { fallbacks?: Array<{ apiKey: string; baseUrl: string; apiPath?: string; model: string; enabled?: boolean }> },
   signal?: AbortSignal,
+  context?: string,
 ): Promise<AIInsightResult> {
   const TIMEOUT_MS = 15_000;
   const configs: AIConfig[] = [
@@ -201,7 +207,7 @@ export async function getAIInsight(
     }
 
     try {
-      const result = await callProvider(word, sourceLang, targetLang, cfg, controller.signal);
+      const result = await callProvider(word, sourceLang, targetLang, cfg, controller.signal, context);
       clearTimeout(timeout);
       if (signal) {
         signal.removeEventListener('abort', abortHandler);

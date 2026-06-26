@@ -93,6 +93,55 @@ import {
   mergeImportedBookNotes,
 } from '@/services/annotation/providers/mrexpt';
 
+function getSelectionContext(range: Range | null | undefined): string | undefined {
+  if (!range) return undefined;
+  try {
+    let ancestor = range.commonAncestorContainer;
+    // Ensure we start with an element node (nodeType 1)
+    if (ancestor.nodeType !== 1) {
+      ancestor = ancestor.parentNode || ancestor;
+    }
+
+    const blockTags = ['P', 'DIV', 'LI', 'SECTION', 'ARTICLE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TD', 'TH'];
+    let blockAncestor = ancestor as HTMLElement | null;
+    while (blockAncestor && blockAncestor.tagName && !blockTags.includes(blockAncestor.tagName.toUpperCase())) {
+      blockAncestor = blockAncestor.parentElement;
+    }
+
+    const contextRoot = blockAncestor || ancestor;
+    if (!contextRoot) return undefined;
+
+    const doc = contextRoot.ownerDocument;
+    if (!doc) return undefined;
+
+    // Get text before selection within contextRoot
+    const preRange = doc.createRange();
+    preRange.selectNodeContents(contextRoot);
+    preRange.setEnd(range.startContainer, range.startOffset);
+    const preText = preRange.toString();
+
+    // Get text after selection within contextRoot
+    const postRange = doc.createRange();
+    postRange.selectNodeContents(contextRoot);
+    postRange.setStart(range.endContainer, range.endOffset);
+    const postText = postRange.toString();
+
+    // Limit context length: 150 characters before, 150 characters after
+    const before = preText.slice(-150);
+    const selected = range.toString();
+    const after = postText.slice(0, 150);
+
+    if (!before.trim() && !after.trim()) {
+      return undefined;
+    }
+
+    return `${before}${selected}${after}`;
+  } catch (e) {
+    console.error('Failed to extract selection context', e);
+    return undefined;
+  }
+}
+
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   bookKey,
   contentInsets,
@@ -157,7 +206,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     aiInsight?: BookNote['aiInsight'];
   } | null>(null);
   const [showAIInsightPopup, setShowAIInsightPopup] = useState(false);
-  const [aiInsightWord, setAiInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string } | null>(null);
+  const [aiInsightWord, setAiInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string; context?: string } | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -1482,6 +1531,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       sourceLang: primaryLang,
       targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
       cfi: selection.cfi,
+      context: getSelectionContext(selection.range),
     });
     setShowAIInsightPopup(true);
   };
@@ -1994,6 +2044,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               sourceLang: primaryLang,
               targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
               cfi: translationNoteData.cfi,
+              context: getSelectionContext(selection?.range),
             });
             setShowAIInsightPopup(true);
           }}
@@ -2004,6 +2055,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           word={aiInsightWord.text}
           sourceLang={aiInsightWord.sourceLang}
           targetLang={aiInsightWord.targetLang}
+          context={aiInsightWord.context}
           position={aiInsightPopupPosition}
           trianglePosition={trianglePosition}
           width={transPopupWidth}

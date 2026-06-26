@@ -50,6 +50,7 @@ export interface AISettings {
     model: string;
     systemPrompt?: string;
     targetLang?: string;
+    useContext?: boolean;
     fallbacks?: Array<{
       provider: string;
       apiKey: string;

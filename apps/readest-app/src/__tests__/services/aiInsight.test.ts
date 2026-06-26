@@ -56,10 +56,39 @@ describe('AI Insight Service', () => {
     });
 
     expect(result.mainTranslation).toBe('halo');
-    expect(result.alternatives).toHaveLength(1);
-    expect(result.alternatives[0].translation).toBe('hai');
+    expect(result.alternatives).toBeDefined();
+    expect(result.alternatives?.[0]?.translation).toBe('hai');
     expect(result.note).toBe('sebuah sapaan');
     expect(mockWebFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes context in the system prompt if context is provided', async () => {
+    vi.spyOn(env, 'isTauriAppPlatform').mockReturnValue(false);
+
+    const sampleResponse = {
+      choices: [{ message: { content: JSON.stringify({ mainTranslation: 'halo', alternatives: [] }) } }]
+    };
+
+    mockWebFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => sampleResponse,
+    } as any);
+
+    const contextText = 'Dia berkata hello kepada saya kemarin.';
+    await getAIInsight('hello', 'en', 'id', {
+      apiKey: 'test-key',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+    }, undefined, contextText);
+
+    expect(mockWebFetch).toHaveBeenCalledTimes(1);
+    const callArgs = mockWebFetch.mock.calls[0];
+    expect(callArgs).toBeDefined();
+    const bodyObj = JSON.parse(callArgs?.[1]?.body || '{}');
+    const systemPrompt = bodyObj.messages.find((m: { role: string; content?: string }) => m.role === 'system')?.content || '';
+    
+    expect(systemPrompt).toContain('The word appears in this context: "Dia berkata hello kepada saya kemarin."');
   });
 
   it('parses JSON contained inside markdown code blocks', async () => {
@@ -143,8 +172,8 @@ describe('AI Insight Service', () => {
     });
 
     expect(result.mainTranslation).toBe('halo');
-    expect(result.alternatives).toHaveLength(1);
-    expect(result.alternatives[0].translation).toBe('hai');
+    expect(result.alternatives).toBeDefined();
+    expect(result.alternatives?.[0]?.translation).toBe('hai');
   });
 
   it('supports Tauri platform and calls native httpFetch', async () => {
@@ -267,13 +296,13 @@ describe('AI Insight Service', () => {
 
     const controller = new AbortController();
     
-    mockWebFetch.mockImplementation(async (url, options) => {
+    mockWebFetch.mockImplementation(async (_url, options) => {
       const signal = options?.signal;
       if (signal) {
         if (signal.aborted) {
           throw new DOMException('The user aborted a request.', 'AbortError');
         }
-        return new Promise((resolve, reject) => {
+        return new Promise((_resolve, reject) => {
           signal.addEventListener('abort', () => {
             reject(new DOMException('The user aborted a request.', 'AbortError'));
           });

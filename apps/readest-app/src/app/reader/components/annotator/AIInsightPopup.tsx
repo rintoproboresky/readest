@@ -11,6 +11,7 @@ interface AIInsightPopupProps {
   word: string;
   sourceLang: string;
   targetLang: string;
+  context?: string;
   position: Position;
   trianglePosition: Position;
   width: number;
@@ -28,6 +29,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   word,
   sourceLang,
   targetLang,
+  context,
   position,
   trianglePosition,
   width,
@@ -102,7 +104,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         baseUrl: llmConfig.baseUrl,
         apiPath: llmConfig.apiPath,
         fallbacks: llmConfig.fallbacks,
-      }, activeSignal);
+      }, activeSignal, llmConfig.useContext ? context : undefined);
       setResult(insight);
       setLoadingState('success');
     } catch (err) {

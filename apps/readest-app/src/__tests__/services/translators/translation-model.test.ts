@@ -45,7 +45,7 @@ describe('BookNote type: translation', () => {
 
     const translations = notes.filter((n) => n.type === 'translation' && !n.deletedAt);
     expect(translations).toHaveLength(2);
-    expect(translations[0].text).toBe('hello');
-    expect(translations[1].text).toBe('world');
+    expect(translations[0]?.text).toBe('hello');
+    expect(translations[1]?.text).toBe('world');
   });
 });
