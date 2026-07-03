@@ -15,7 +15,7 @@ interface AIInsightPopupProps {
   position: Position;
   trianglePosition: Position;
   width: number;
-  height: number;
+  height?: number;
   onDismiss: () => void;
   onSelectAlternative?: (translation: string) => void;
   onSaveFullResult?: (result: AIInsightResult) => void;
@@ -33,7 +33,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   position,
   trianglePosition,
   width,
-  height,
+  height = 0,
   onDismiss,
   onSelectAlternative,
   onSaveFullResult,
