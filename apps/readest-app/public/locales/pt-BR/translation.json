@@ -1842,5 +1842,9 @@
   "Granularity": "Granularidade",
   "Refresh Page": "Atualizar página",
   "Recently read": "Lidos recentemente",
-  "Show recently read": "Mostrar lidos recentemente"
+  "Show recently read": "Mostrar lidos recentemente",
+  "Find:": "Localizar:",
+  "Enable rule": "Ativar regra",
+  "Disable rule": "Desativar regra",
+  "Progress Read": "Progresso de leitura"
 }

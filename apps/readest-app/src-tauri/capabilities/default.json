@@ -16,6 +16,8 @@
     "fs:allow-stat",
     "fs:allow-fstat",
     "fs:allow-lstat",
+    "fs:read-all",
+    "fs:write-all",
     {
       "identifier": "fs:scope-appconfig-recursive",
       "allow": [
@@ -62,28 +64,6 @@
       ]
     },
     {
-      "identifier": "fs:allow-cache-read",
-      "allow": [
-        {
-          "path": "$APPCACHE/**/*"
-        },
-        {
-          "path": "/private/var/mobile/Containers/Data/Application/**/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-cache-write",
-      "allow": [
-        {
-          "path": "$APPCACHE/**/*"
-        },
-        {
-          "path": "/private/var/mobile/Containers/Data/Application/**/*"
-        }
-      ]
-    },
-    {
       "identifier": "fs:scope",
       "allow": [
         {
@@ -100,6 +80,12 @@
         },
         {
           "path": "$TEMP/**/*"
+        },
+        {
+          "path": "$APPCACHE/**/*"
+        },
+        {
+          "path": "/private/var/mobile/Containers/Data/Application/**/*"
         }
       ]
     },
