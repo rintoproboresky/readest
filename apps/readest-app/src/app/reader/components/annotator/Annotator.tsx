@@ -102,9 +102,28 @@ function getSelectionContext(range: Range | null | undefined): string | undefine
       ancestor = ancestor.parentNode || ancestor;
     }
 
-    const blockTags = ['P', 'DIV', 'LI', 'SECTION', 'ARTICLE', 'BLOCKQUOTE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TD', 'TH'];
+    const blockTags = [
+      'P',
+      'DIV',
+      'LI',
+      'SECTION',
+      'ARTICLE',
+      'BLOCKQUOTE',
+      'H1',
+      'H2',
+      'H3',
+      'H4',
+      'H5',
+      'H6',
+      'TD',
+      'TH',
+    ];
     let blockAncestor = ancestor as HTMLElement | null;
-    while (blockAncestor && blockAncestor.tagName && !blockTags.includes(blockAncestor.tagName.toUpperCase())) {
+    while (
+      blockAncestor &&
+      blockAncestor.tagName &&
+      !blockTags.includes(blockAncestor.tagName.toUpperCase())
+    ) {
       blockAncestor = blockAncestor.parentElement;
     }
 
@@ -160,7 +179,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const getView = useReaderStore((s) => s.getView);
   const getViewsById = useReaderStore((s) => s.getViewsById);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
-  const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
+  const { setNotebookVisible, setNotebookNewAnnotation, setNotebookNewHighlightId } =
+    useNotebookStore();
   const { clearBooknotesNav } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
   const { loadCustomDictionaries } = useCustomDictionaryStore();
@@ -206,7 +226,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     aiInsight?: BookNote['aiInsight'];
   } | null>(null);
   const [showAIInsightPopup, setShowAIInsightPopup] = useState(false);
-  const [aiInsightWord, setAiInsightWord] = useState<{ text: string; sourceLang: string; targetLang: string; cfi?: string; context?: string } | null>(null);
+  const [aiInsightWord, setAiInsightWord] = useState<{
+    text: string;
+    sourceLang: string;
+    targetLang: string;
+    cfi?: string;
+    context?: string;
+  } | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
@@ -227,7 +253,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // would otherwise tear down the dialog state immediately.
   const [clearAnnotationsCount, setClearAnnotationsCount] = useState(0);
   const [exportData, setExportData] = useState<{
-    booknotes: BookNote[];
     booknoteGroups: { [href: string]: BooknoteGroup };
   } | null>(null);
 
@@ -252,7 +277,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup || showTranslationNotePopup || showAIInsightPopup;
+    showAnnotPopup ||
+    showDictionaryPopup ||
+    showDeepLPopup ||
+    showProofreadPopup ||
+    showTranslationNotePopup ||
+    showAIInsightPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -406,6 +436,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleNativeTouchMove,
     handlePointerCancel,
     handlePointerUp,
+    handleDoubleClick,
     handleSelectionchange,
     handleShowPopup,
     handleUpToPopup,
@@ -431,7 +462,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleSaveTranslation = useCallback(
-    (text: string, translation: string, transStyle?: string, transColor?: string, cfi?: string, aiInsight?: BookNote['aiInsight']) => {
+    (
+      text: string,
+      translation: string,
+      transStyle?: string,
+      transColor?: string,
+      cfi?: string,
+      aiInsight?: BookNote['aiInsight'],
+    ) => {
       const noteCfi = cfi ?? selection?.cfi;
       if (!noteCfi) return;
       const config = getConfig(bookKey);
@@ -673,12 +711,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const padding = viewSettings.vertical
         ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-      const transStyle: 'underline' | 'squiggly' =
-        style === 'squiggly' ? 'squiggly' : 'underline';
+      const transStyle: 'underline' | 'squiggly' = style === 'squiggly' ? 'squiggly' : 'underline';
       const transColor = isBwEink
         ? einkFgColor
         : color
-          ? (getHighlightColorHex(settings, color) || color)
+          ? getHighlightColorHex(settings, color) || color
           : '#0891b2';
       draw(Overlayer[transStyle], {
         writingMode,
@@ -727,7 +764,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // handler dispatches iframe-single-click. Same-origin means we can write
     // directly to the iframe's global.
     const content = view?.renderer?.getContents().find((c) => c.index === index);
-    const iframeWindow = content?.doc?.defaultView || document.querySelector('iframe')?.contentWindow;
+    const iframeWindow =
+      content?.doc?.defaultView || document.querySelector('iframe')?.contentWindow;
     if (iframeWindow) {
       (iframeWindow as any).__supressAnnotationNav = true;
     }
@@ -737,7 +775,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { booknotes = [] } = config;
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
-    const transCfi = isSyntheticGlobalValue(rawValue) ? sourceCfiFromSyntheticValue(rawValue) : rawValue;
+    const transCfi = isSyntheticGlobalValue(rawValue)
+      ? sourceCfiFromSyntheticValue(rawValue)
+      : rawValue;
     const translation = booknotes.find(
       (n) => n.type === 'translation' && !n.deletedAt && n.cfi === transCfi,
     );
@@ -847,6 +887,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     enableNativeTouch: !!appService?.isAndroidApp,
     listenToNativeTouchEvents,
   });
+
+  // A double-click / touch double-tap on a word selects that word and raises the
+  // quick action (if one is configured) or the annotation toolbar — like a
+  // long-press selection. The iframe posts `iframe-double-click` (gated by the
+  // user's double-click setting) with coordinates in the originating section's
+  // viewport; resolve the visible section's doc/index the way the native-touch
+  // bridge does, then select the word under the point.
+  useEffect(() => {
+    const handleDoubleClickMessage = (msg: MessageEvent) => {
+      const data = msg.data;
+      if (!data || data.bookKey !== bookKey || data.type !== 'iframe-double-click') return;
+      const renderer = view?.renderer;
+      const contents = renderer?.getContents?.() ?? [];
+      const content = contents.find((c) => c.index === renderer?.primaryIndex) ?? contents[0];
+      const doc = content?.doc;
+      const index = content?.index;
+      if (!doc || index === undefined) return;
+      // A double-click is a deliberate act-on-word gesture, so let the quick
+      // action fire without the touch long-press hold gate (matching a mouse
+      // selection, which sets this to 0 on pointerdown).
+      pointerDownTimeRef.current = 0;
+      void handleDoubleClick(doc, index, data.clientX, data.clientY);
+    };
+    window.addEventListener('message', handleDoubleClickMessage);
+    return () => window.removeEventListener('message', handleDoubleClickMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, view]);
 
   // Word Lens: open the dictionary popup for a tapped glossed word. The tap is
   // detected in the iframe click handler (iframeEventHandlers.ts), which sends
@@ -1335,12 +1402,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleDismissPopupAndSelection();
   };
 
-  const handleHighlight = (update = false, highlightStyle?: HighlightStyle) => {
-    if (!selection || !selection.text) return;
+  const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote | null => {
+    if (!selection || !selection.text) return null;
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const cfi = view?.getCFI(selection.index, selection.range);
-    if (!cfi) return;
+    if (!cfi) return null;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
     setSelectedStyle(style);
@@ -1365,6 +1432,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         !annotation.deletedAt,
     );
     const views = getViewsById(bookKey.split('-')[0]!);
+    // Only a brand-new highlight is a placeholder the cancel flow may remove;
+    // restyling/toggling an existing one must never tear down the user's record.
+    let created: BookNote | null = null;
     if (existingIndex !== -1) {
       const existing = annotations[existingIndex]!;
       // Tear down both the original anchor and any global fan-outs that
@@ -1396,12 +1466,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       annotations.push(annotation);
       views.forEach((view) => view?.addAnnotation(annotation));
       setSelection({ ...selection, cfi, annotated: true });
+      created = annotation;
     }
 
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
     }
+    return created;
   };
 
   const handleCreateTTSHighlight = (event: CustomEvent) => {
@@ -1468,9 +1540,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return;
     const { sectionHref: href } = progress;
     selection.href = href;
-    handleHighlight(true);
+    const created = handleHighlight(true);
     setNotebookVisible(true);
     setNotebookNewAnnotation(selection);
+    // Remember the eagerly-created highlight so the notebook can remove it if the
+    // note is never saved. A restyle of an existing highlight returns null — that
+    // record predates this flow and must survive a cancel (#4791).
+    setNotebookNewHighlightId(created?.id ?? null);
     handleDismissPopup();
   };
 
@@ -1780,7 +1856,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       });
     });
 
-    setExportData({ booknotes, booknoteGroups });
+    setExportData({ booknoteGroups });
     setShowExportDialog(true);
   };
 
@@ -2023,33 +2099,36 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           }}
         />
       )}
-      {showTranslationNotePopup && trianglePosition && translationNotePopupPosition && translationNoteData && (
-        <AIInsightNotePopup
-          text={translationNoteData.text}
-          translation={translationNoteData.translation}
-          cfi={translationNoteData.cfi}
-          style={translationNoteData.style}
-          color={translationNoteData.color}
-          position={translationNotePopupPosition}
-          trianglePosition={trianglePosition}
-          width={transPopupWidth}
-          onDismiss={handleDismissPopupAndSelection}
-          onSave={handleEditTranslation}
-          onDelete={handleDeleteTranslation}
-          aiInsight={translationNoteData.aiInsight}
-          onInsight={() => {
-            setShowTranslationNotePopup(false);
-            setAiInsightWord({
-              text: translationNoteData.text,
-              sourceLang: primaryLang,
-              targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
-              cfi: translationNoteData.cfi,
-              context: getSelectionContext(selection?.range),
-            });
-            setShowAIInsightPopup(true);
-          }}
-        />
-      )}
+      {showTranslationNotePopup &&
+        trianglePosition &&
+        translationNotePopupPosition &&
+        translationNoteData && (
+          <AIInsightNotePopup
+            text={translationNoteData.text}
+            translation={translationNoteData.translation}
+            cfi={translationNoteData.cfi}
+            style={translationNoteData.style}
+            color={translationNoteData.color}
+            position={translationNotePopupPosition}
+            trianglePosition={trianglePosition}
+            width={transPopupWidth}
+            onDismiss={handleDismissPopupAndSelection}
+            onSave={handleEditTranslation}
+            onDelete={handleDeleteTranslation}
+            aiInsight={translationNoteData.aiInsight}
+            onInsight={() => {
+              setShowTranslationNotePopup(false);
+              setAiInsightWord({
+                text: translationNoteData.text,
+                sourceLang: primaryLang,
+                targetLang: settings.aiSettings?.llm?.targetLang || getUserLang(),
+                cfi: translationNoteData.cfi,
+                context: getSelectionContext(selection?.range),
+              });
+              setShowAIInsightPopup(true);
+            }}
+          />
+        )}
       {showAIInsightPopup && trianglePosition && aiInsightPopupPosition && aiInsightWord && (
         <AIInsightPopup
           word={aiInsightWord.text}
@@ -2065,7 +2144,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             if (aiInsightWord) {
               const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
               if (noteCfi) {
-                handleSaveTranslation(aiInsightWord.text, translation, undefined, undefined, noteCfi);
+                handleSaveTranslation(
+                  aiInsightWord.text,
+                  translation,
+                  undefined,
+                  undefined,
+                  noteCfi,
+                );
               }
             }
           }}
@@ -2073,7 +2158,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             if (aiInsightWord) {
               const noteCfi = aiInsightWord.cfi ?? selection?.cfi;
               if (noteCfi) {
-                handleSaveTranslation(aiInsightWord.text, result.mainTranslation, undefined, undefined, noteCfi, result);
+                handleSaveTranslation(
+                  aiInsightWord.text,
+                  result.mainTranslation,
+                  undefined,
+                  undefined,
+                  noteCfi,
+                  result,
+                );
               }
             }
           }}
@@ -2128,7 +2220,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           bookHash={bookData.book.hash}
           bookTitle={bookData.book.title}
           bookAuthor={bookData.book.author || ''}
-          booknotes={exportData.booknotes}
           booknoteGroups={exportData.booknoteGroups}
           onCancel={handleCancelExport}
           onExport={handleConfirmExport}

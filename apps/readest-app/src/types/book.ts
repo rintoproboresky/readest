@@ -1,5 +1,6 @@
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
+import { TTSHighlightGranularity } from '@/services/tts/types';
 import { TTSMediaMetadataMode } from '@/services/tts/types';
 import type { AnnotationLinkType } from '@/utils/deeplink';
 import { AnnotationToolType } from './annotator';
@@ -253,6 +254,7 @@ export interface BookStyle {
   keepCoverSpread: boolean;
   invertImgColorInDark: boolean;
   applyThemeToPDF: boolean;
+  contrast: number;
 }
 
 export interface BookFont {
@@ -326,6 +328,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;
 }
 
@@ -352,6 +355,11 @@ export interface NoteExportConfig {
   useCustomTemplate: boolean;
   customTemplate: string;
   exportAsPlainText: boolean;
+  // Highlight colors/styles to omit from the export. Empty arrays export
+  // everything; storing exclusions keeps colors/styles added later included
+  // by default (#4801).
+  excludedColors: HighlightColor[];
+  excludedStyles: HighlightStyle[];
 }
 
 export interface AnnotatorConfig {

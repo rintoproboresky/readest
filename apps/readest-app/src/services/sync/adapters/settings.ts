@@ -71,6 +71,15 @@ export const SETTINGS_WHITELIST = [
   'aiSettings.llm.targetLang',
   'aiSettings.llm.useContext',
   'aiSettings.llm.fallbacks',
+  // WebDAV connection. serverUrl + rootPath sync as plaintext so a fresh
+  // device pre-fills the connect form; username / password are listed in
+  // `encryptedFields` below. Per-device bookkeeping (enabled, deviceId,
+  // lastSyncedAt, sync sub-toggles) is deliberately excluded — see KOSync,
+  // which likewise syncs credentials but not its `enabled` flag.
+  'webdav.serverUrl',
+  'webdav.username',
+  'webdav.password',
+  'webdav.rootPath',
 ] as const;
 
 /**
@@ -94,6 +103,8 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'hardcover.accessToken',
   'aiSettings.llm.apiKey',
   'aiSettings.llm.fallbacks',
+  'webdav.username',
+  'webdav.password',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];
