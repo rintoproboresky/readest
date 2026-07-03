@@ -111,7 +111,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
       if (err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted'))) {
         return;
       }
-      setError((err as Error).message || _('Failed to get word insight'));
+      setError((err as Error).message || _('Failed to get insight'));
       setLoadingState('error');
     } finally {
       setSpinning(false);
@@ -180,12 +180,12 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         {/* Success */}
         {loadingState === 'success' && result && !editing && (
           <>
-            {/* Main Translation */}
+            {/* Main meaning */}
             <button
               className='w-full rounded-md bg-base-200/50 px-3 py-2 text-left transition-colors hover:bg-base-200/80'
               onClick={() => onSelectAlternative?.(result.mainTranslation)}
             >
-              <span className='text-base-content/50 text-xs font-medium'>{_('Translation')}</span>
+              <span className='text-base-content/50 text-xs font-medium'>{_('Meaning')}</span>
               <div className='text-base-content text-sm font-semibold'>
                 {result.mainTranslation}
               </div>
@@ -239,9 +239,9 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
         {/* Edit mode */}
         {editing && result && (
           <>
-            {/* Translation textarea */}
+            {/* Meaning textarea */}
             <div className='w-full rounded-md bg-base-200/50 px-3 py-2'>
-              <span className='text-base-content/50 text-xs font-medium'>{_('Translation')}</span>
+              <span className='text-base-content/50 text-xs font-medium'>{_('Meaning')}</span>
               <textarea
                 ref={textareaRef}
                 className='textarea textarea-bordered text-base text-base-content font-medium w-full resize-none mt-1'

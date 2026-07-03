@@ -100,7 +100,7 @@ const AIInsightNotePopup: React.FC<AIInsightNotePopupProps> = ({
           <span className='text-base-content/40 text-xs'>&ldquo;{text}&rdquo;</span>
         </div>
         <div className='w-full rounded-md bg-base-200/50 px-3 py-2'>
-          <span className='text-xs font-medium text-base-content/50'>{_('Translation')}</span>
+          <span className='text-xs font-medium text-base-content/50'>{_('Meaning')}</span>
           {editing ? (
             <textarea
               ref={textareaRef}

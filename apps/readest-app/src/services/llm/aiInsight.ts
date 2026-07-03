@@ -21,30 +21,37 @@ interface AIConfig {
   apiPath?: string;
 }
 
-function buildWordInsightPrompt(word: string, sourceLang: string, targetLang: string, context?: string) {
+function buildReadingInsightPrompt(text: string, sourceLang: string, targetLang: string, context?: string) {
   const contextInstruction = context
-    ? `\n- The word appears in this context: "${context}". Translate and explain the word specifically as it is used in this context.`
+    ? `\n- The selected text appears in this context: "${context}". Explain the selected text specifically as it is used in this context.`
     : '';
+  const sameLanguageInstruction =
+    sourceLang.toLowerCase() === targetLang.toLowerCase()
+      ? '\n- Source and target language are the same, so do not translate. Explain the meaning in clearer, reader-friendly language.'
+      : '';
 
   return {
-    system: `You are a literary assistant helping a reader understand a word or short phrase.
+    system: `You are a literary reading assistant helping a reader understand selected text from a book.
 
 For the given input, return ONLY a JSON object with:
-- "mainTranslation": the most likely translation in a general reading context
+- "mainTranslation": the clearest reader-facing meaning. If source and target languages differ, translate it. If they are the same language, explain or paraphrase it in simpler words.
 - "alternatives": array of 2-4 objects, each with:
-  - "translation": the alternative translation
-  - "usage": a usage label (e.g. "financial", "geography", "idiom", "formal", "slang", "technical")
-  - "example": a natural example sentence in ${sourceLang} showing this usage
+  - "translation": an alternative meaning, nuance, paraphrase, or translation
+  - "usage": a short usage label
+  - "example": a natural example sentence in ${sourceLang} showing this meaning or usage
   - "confidence": "high" | "medium" | "low"
-- "note": optional brief usage note (cultural context, register, etc.)
+- "note": optional brief note about nuance, idiom, grammar, register, or cultural context
 
 Rules:
-- If the input is a phrase, translate it as a unit and note any idiomatic meaning
-- Examples must be natural, not constructed${contextInstruction}
-- If the word is rare or archaic, note it
+- Write every field except "example" entirely in ${targetLang}.
+- Keep "example" in ${sourceLang}.
+- Support single words, phrases, idioms, and full sentences.
+- For a full sentence, prioritize meaning, tone, and why it may be confusing over listing dictionary-style alternatives.
+- If the selected text is an idiom, explain the idiomatic meaning first.
+- If it is rare, archaic, slang, or domain-specific, mention that in "note".${contextInstruction}${sameLanguageInstruction}
 - Return ONLY the JSON object, no other text`,
 
-    user: `${word} (${sourceLang} → ${targetLang})`,
+    user: `${text} (${sourceLang} -> ${targetLang})`,
   };
 }
 
@@ -56,7 +63,7 @@ async function callProvider(
   signal: AbortSignal,
   context?: string,
 ): Promise<AIInsightResult> {
-  const { system, user } = buildWordInsightPrompt(word, sourceLang, targetLang, context);
+  const { system, user } = buildReadingInsightPrompt(word, sourceLang, targetLang, context);
 
   const isAnthropic =
     config.baseUrl.includes('api.anthropic.com') ||

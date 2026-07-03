@@ -412,7 +412,7 @@ const AIInsightPanel: React.FC = () => {
         </select>
       </SettingsRow>
 
-      <SettingsRow label={_('Context-Aware Translation')} asLabel>
+      <SettingsRow label={_('Context-Aware Insight')} asLabel>
         <input
           type='checkbox'
           className='checkbox checkbox-sm'
