@@ -41,6 +41,13 @@ const TranslationStylePicker: React.FC<TranslationStylePickerProps> = ({
               />
             );
           })}
+          <input
+            type='color'
+            className='h-7 w-7 cursor-pointer rounded-full border-0 p-0'
+            value={HIGHLIGHT_COLOR_HEX[color as keyof typeof HIGHLIGHT_COLOR_HEX] ?? color}
+            onChange={(e) => onChange(style, e.target.value)}
+            aria-label='custom color'
+          />
         </div>
         <div className='mx-1 h-5 w-px bg-base-300' />
         <div className='flex items-center gap-1'>

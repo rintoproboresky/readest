@@ -59,6 +59,9 @@ export interface AISettings {
       model: string;
       enabled?: boolean;
     }>;
+    translationStyle?: 'underline' | 'squiggly';
+    translationColor?: string;
+    translationThickness?: number;
   };
 
   /**

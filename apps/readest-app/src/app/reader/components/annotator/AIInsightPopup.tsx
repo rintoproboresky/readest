@@ -5,7 +5,7 @@ import { Position } from '@/utils/sel';
 import { getAIInsight, AIInsightResult } from '@/services/llm/aiInsight';
 import { useSettingsStore } from '@/store/settingsStore';
 import { PiArrowsClockwise, PiPencilSimple, PiTrash } from 'react-icons/pi';
-import TranslationStylePicker, { TranslationStyle } from './TranslationStylePicker';
+import type { TranslationStyle } from './TranslationStylePicker';
 
 interface AIInsightPopupProps {
   word: string;
@@ -49,8 +49,6 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
   const [spinning, setSpinning] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
-  const [editStyle, setEditStyle] = useState<TranslationStyle>('underline');
-  const [editColor, setEditColor] = useState('#0891b2');
   const autoSaved = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -63,7 +61,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
 
   const handleEditSave = () => {
     if (editValue.trim()) {
-      onEditTranslation?.(editValue.trim(), editStyle, editColor);
+      onEditTranslation?.(editValue.trim(), undefined, undefined);
     }
     setEditing(false);
     onDismiss();
@@ -71,16 +69,14 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
 
   const handleEditCancel = () => {
     setEditing(false);
-    setEditValue(result?.mainTranslation ?? '');
-    setEditStyle('underline');
-    setEditColor('#0891b2');
+    setEditValue(result?.meaning ?? result?.mainTranslation ?? '');
   };
 
   useEffect(() => {
     if (loadingState === 'success' && result && !autoSaved.current) {
       autoSaved.current = true;
       onSaveFullResult?.(result);
-      onSelectAlternative?.(result.mainTranslation);
+      onSelectAlternative?.(result.meaning ?? result.mainTranslation);
     }
   }, [loadingState, result, onSelectAlternative, onSaveFullResult]);
 
@@ -135,7 +131,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
       height={height}
       onDismiss={onDismiss}
     >
-      <div className='flex max-h-[320px] flex-col p-3'>
+      <div className='flex max-h-[520px] flex-col px-3 py-2'>
         <div className='flex flex-col gap-2 overflow-y-auto'>
         {/* Header */}
         <div className='flex items-center justify-between border-b border-base-200 pb-2 shrink-0'>
@@ -145,16 +141,6 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
               &ldquo;{word}&rdquo; ({sourceLang} → {targetLang})
             </span>
           </div>
-          <button
-            className='btn btn-ghost btn-xs p-0.5'
-            onClick={() => void fetchInsight()}
-            disabled={loadingState === 'loading'}
-            title={_('Regenerate')}
-          >
-            <PiArrowsClockwise
-              className={`text-sm ${spinning ? 'animate-spin' : ''}`}
-            />
-          </button>
         </div>
 
         {/* Loading */}
@@ -183,11 +169,11 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
             {/* Main meaning */}
             <button
               className='w-full rounded-md bg-base-200/50 px-3 py-2 text-left transition-colors hover:bg-base-200/80'
-              onClick={() => onSelectAlternative?.(result.mainTranslation)}
+              onClick={() => onSelectAlternative?.(result.meaning ?? result.mainTranslation)}
             >
               <span className='text-base-content/50 text-xs font-medium'>{_('Meaning')}</span>
               <div className='text-base-content text-sm font-semibold'>
-                {result.mainTranslation}
+                {result.meaning ?? result.mainTranslation}
               </div>
             </button>
 
@@ -250,24 +236,12 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
                 onChange={(e) => setEditValue(e.target.value)}
               />
             </div>
-            {/* Style picker */}
-            <div className='flex flex-col gap-2'>
-              <span className='text-xs font-medium text-base-content/50'>{_('Style')}</span>
-              <TranslationStylePicker
-                style={editStyle}
-                color={editColor}
-                onChange={(s, c) => {
-                  setEditStyle(s);
-                  setEditColor(c);
-                }}
-              />
-            </div>
           </>
         )}
 
         </div>
         {/* Footer */}
-        <div className='flex items-center gap-2 border-t border-base-200 pt-2 mt-2 shrink-0'>
+        <div className='flex items-center gap-2 border-t border-base-200 pt-1.5 shrink-0'>
           {editing ? (
             <>
               <button
@@ -287,11 +261,9 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
           ) : loadingState === 'success' && result ? (
             <>
               <button
-                className='btn btn-ghost btn-xs text-base-content/60 hover:text-base-content'
+                className='text-base-content/60 hover:text-primary p-0.5'
                 onClick={() => {
-                  setEditValue(result.mainTranslation);
-                  setEditStyle('underline');
-                  setEditColor('#0891b2');
+                  setEditValue(result.meaning ?? result.mainTranslation);
                   setEditing(true);
                 }}
                 title={_('Edit')}
@@ -299,7 +271,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
                 <PiPencilSimple className='text-xs' />
               </button>
               <button
-                className='btn btn-ghost btn-xs text-base-content/60 hover:text-error'
+                className='text-base-content/60 hover:text-error p-0.5'
                 onClick={onDiscard}
                 title={_('Delete')}
               >
@@ -307,7 +279,7 @@ const AIInsightPopup: React.FC<AIInsightPopupProps> = ({
               </button>
               <div className='flex-1' />
               <button
-                className='btn btn-primary btn-xs gap-1'
+                className='text-base-content/60 hover:text-primary p-0.5'
                 onClick={() => void fetchInsight()}
                 disabled={spinning}
                 title={_('Regenerate')}

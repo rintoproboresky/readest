@@ -7,6 +7,7 @@ import { isTauriAppPlatform, getAPIBaseUrl } from '@/services/environment';
 import { getAIFetch } from '@/services/ai/utils/httpFetch';
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { BoxedList, SettingLabel, SettingsRow } from '../primitives';
+import TranslationStylePicker, { TranslationStyle } from '@/app/reader/components/annotator/TranslationStylePicker';
 import { PiTrash, PiPlus } from 'react-icons/pi';
 
 type LLMProvider = 'openrouter' | 'openai' | 'google-ai-studio' | 'groq' | 'mistral' | 'anthropic' | 'deepseek' | 'moonshot' | 'xiaomi' | 'z-ai' | 'custom';
@@ -40,6 +41,9 @@ const AIInsightPanel: React.FC = () => {
   const [model, setModel] = useState(llmCfg?.model ?? '');
   const [insightTargetLang, setInsightTargetLang] = useState(llmCfg?.targetLang ?? '');
   const [useContext, setUseContext] = useState(llmCfg?.useContext ?? false);
+  const [translationStyle, setTranslationStyle] = useState<TranslationStyle>(llmCfg?.translationStyle ?? 'underline');
+  const [translationColor, setTranslationColor] = useState(llmCfg?.translationColor ?? '#0891b2');
+  const [translationThickness, setTranslationThickness] = useState(llmCfg?.translationThickness ?? 2);
   const [fallbacks, setFallbacks] = useState<FallbackEntry[]>(() => 
     (Array.isArray(llmCfg?.fallbacks) ? llmCfg.fallbacks : []).map((f) => ({
       provider: (f.provider as LLMProvider) || 'openai',
@@ -67,6 +71,9 @@ const AIInsightPanel: React.FC = () => {
     setModel(llmCfg.model ?? '');
     setInsightTargetLang(llmCfg.targetLang ?? '');
     setUseContext(llmCfg.useContext ?? false);
+    setTranslationStyle((llmCfg.translationStyle ?? 'underline') as TranslationStyle);
+    setTranslationColor(llmCfg.translationColor ?? '#0891b2');
+    setTranslationThickness(llmCfg.translationThickness ?? 2);
     if (Array.isArray(llmCfg.fallbacks)) {
       setFallbacks(llmCfg.fallbacks.map((f) => ({
         provider: (f.provider as LLMProvider) || 'openai',
@@ -188,7 +195,10 @@ const AIInsightPanel: React.FC = () => {
       model: f.model,
       enabled: f.enabled ?? true,
     })),
-  }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, useContext, fallbacks]);
+    translationStyle,
+    translationColor,
+    translationThickness,
+  }), [provider, apiKey, baseUrl, apiPath, model, insightTargetLang, useContext, fallbacks, translationStyle, translationColor, translationThickness]);
 
 
 
@@ -410,6 +420,32 @@ const AIInsightPanel: React.FC = () => {
             </option>
           ))}
         </select>
+      </SettingsRow>
+
+      <SettingsRow label={_('Default Style')} asLabel>
+        <TranslationStylePicker
+          style={translationStyle}
+          color={translationColor}
+          onChange={(s, c) => {
+            setTranslationStyle(s);
+            setTranslationColor(c);
+          }}
+        />
+      </SettingsRow>
+
+      <SettingsRow label={_('Thickness')} asLabel>
+        <div className='flex items-center gap-2'>
+          <input
+            type='range'
+            min={1}
+            max={6}
+            step={0.5}
+            className='range range-xs w-20'
+            value={translationThickness}
+            onChange={(e) => setTranslationThickness(Number(e.target.value))}
+          />
+          <span className='text-xs text-base-content/60 w-6'>{translationThickness}px</span>
+        </div>
       </SettingsRow>
 
       <SettingsRow label={_('Context-Aware Insight')} asLabel>

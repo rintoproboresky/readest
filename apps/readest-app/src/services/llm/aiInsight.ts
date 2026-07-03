@@ -9,6 +9,8 @@ export interface AIInsightAlternative {
 }
 
 export interface AIInsightResult {
+  meaning: string;
+  /** @deprecated use `meaning` — kept for backward compat with saved notes */
   mainTranslation: string;
   alternatives: AIInsightAlternative[];
   note?: string;
@@ -34,8 +36,8 @@ function buildReadingInsightPrompt(text: string, sourceLang: string, targetLang:
     system: `You are a literary reading assistant helping a reader understand selected text from a book.
 
 For the given input, return ONLY a JSON object with:
-- "mainTranslation": the clearest reader-facing meaning. If source and target languages differ, translate it. If they are the same language, explain or paraphrase it in simpler words.
-- "alternatives": array of 2-4 objects, each with:
+- "meaning": the clearest reader-facing explanation. If source and target languages differ, translate it. If they are the same language, explain or paraphrase it in simpler words.
+- "alternatives": array of up to 3 objects, each with:
   - "translation": an alternative meaning, nuance, paraphrase, or translation
   - "usage": a short usage label
   - "example": a natural example sentence in ${sourceLang} showing this meaning or usage
@@ -89,7 +91,7 @@ async function callProvider(
         system,
         messages: [{ role: 'user', content: user }],
         temperature: 0.3,
-        max_tokens: 512,
+        max_tokens: 1024,
       };
     } else {
       headers['Authorization'] = `Bearer ${config.apiKey}`;
@@ -102,7 +104,7 @@ async function callProvider(
           { role: 'user', content: user },
         ],
         temperature: 0.3,
-        max_tokens: 512,
+        max_tokens: 1024,
       };
     }
 
@@ -128,7 +130,7 @@ async function callProvider(
           { role: 'user', content: user },
         ],
         temperature: 0.3,
-        max_tokens: 512,
+        max_tokens: 1024,
         headers: {
           'HTTP-Referer': 'readest',
           'X-Title': 'Readest AI Insight',
@@ -255,12 +257,15 @@ function parseInsightResponse(raw: string): AIInsightResult {
   try {
     const parsed = JSON.parse(cleaned);
 
-    if (!parsed.mainTranslation || !Array.isArray(parsed.alternatives)) {
+    const rawMeaning = parsed.meaning ?? parsed.mainTranslation;
+    if (!rawMeaning || !Array.isArray(parsed.alternatives)) {
       throw new Error('Invalid response structure');
     }
 
+    const meaning = String(rawMeaning);
     return {
-      mainTranslation: String(parsed.mainTranslation),
+      meaning,
+      mainTranslation: meaning,
       alternatives: parsed.alternatives
         .filter((alt: any) => alt && typeof alt === 'object')
         .slice(0, 6)
@@ -278,6 +283,7 @@ function parseInsightResponse(raw: string): AIInsightResult {
     };
   } catch {
     return {
+      meaning: cleaned,
       mainTranslation: cleaned,
       alternatives: [],
       note: 'Could not parse structured response',

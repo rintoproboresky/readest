@@ -88,7 +88,7 @@ describe('AI Insight Service', () => {
     const bodyObj = JSON.parse(callArgs?.[1]?.body || '{}');
     const systemPrompt = bodyObj.messages.find((m: { role: string; content?: string }) => m.role === 'system')?.content || '';
     
-    expect(systemPrompt).toContain('The word appears in this context: "Dia berkata hello kepada saya kemarin."');
+    expect(systemPrompt).toContain('The selected text appears in this context: "Dia berkata hello kepada saya kemarin."');
   });
 
   it('parses JSON contained inside markdown code blocks', async () => {

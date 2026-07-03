@@ -364,7 +364,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       triangPos,
       rect,
       transPopupWidth,
-      Math.min(360, maxHeight),
+      Math.min(520, maxHeight),
       popupPadding,
     );
     if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
@@ -492,8 +492,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           text,
           translation,
           note: '',
-          style: (transStyle as 'underline' | 'squiggly') || 'underline',
-          color: transColor || '#0891b2',
+          style: (transStyle as 'underline' | 'squiggly') || settings?.aiSettings?.llm?.translationStyle || 'underline',
+          color: transColor || settings?.aiSettings?.llm?.translationColor || '#0891b2',
           global: true,
           aiInsight,
           createdAt: Date.now(),
@@ -520,8 +520,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       );
       if (!note) return;
       note.translation = newTranslation;
-      note.style = (transStyle as 'underline' | 'squiggly') || note.style || 'underline';
-      note.color = transColor || note.color || '#0891b2';
+      note.style = (transStyle as 'underline' | 'squiggly') || note.style || settings?.aiSettings?.llm?.translationStyle || 'underline';
+      note.color = transColor || note.color || settings?.aiSettings?.llm?.translationColor || '#0891b2';
       note.updatedAt = Date.now();
       const updatedConfig = updateBooknotes(bookKey, config.booknotes ?? []);
       if (updatedConfig) {
@@ -721,6 +721,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         writingMode,
         color: transColor,
         padding,
+        width: strokeWidth,
       });
     } else if (kind === 'bubble') {
       const { defaultView } = doc;
@@ -798,7 +799,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         translation: translation.translation,
         cfi: transCfi,
         style: (translation.style as 'underline' | 'squiggly') || 'underline',
-        color: translation.color || '#0891b2',
+        color: translation.color || settings?.aiSettings?.llm?.translationColor || '#0891b2',
         aiInsight: translation.aiInsight,
       });
       setSelection(sel);
@@ -1238,7 +1239,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         triangPos,
         rect,
         transPopupWidth,
-        Math.min(360, maxHeight),
+        Math.min(520, maxHeight),
         popupPadding,
       );
       if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
@@ -2138,7 +2139,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           position={aiInsightPopupPosition}
           trianglePosition={trianglePosition}
           width={transPopupWidth}
-          height={Math.min(360, maxHeight)}
           onDismiss={handleDismissPopupAndSelection}
           onSelectAlternative={(translation) => {
             if (aiInsightWord) {
@@ -2160,7 +2160,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               if (noteCfi) {
                 handleSaveTranslation(
                   aiInsightWord.text,
-                  result.mainTranslation,
+                  result.meaning ?? result.mainTranslation,
                   undefined,
                   undefined,
                   noteCfi,

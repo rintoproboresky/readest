@@ -160,6 +160,7 @@ export interface BookNote {
   translation?: string;
   /** Full AI Insight result with alternatives and context */
   aiInsight?: {
+    meaning?: string;
     mainTranslation: string;
     alternatives: Array<{
       translation: string;
