@@ -10,6 +10,7 @@ interface StatusInfoProps {
   use24Hour?: boolean;
   isVertical?: boolean;
   isEink?: boolean;
+  className?: string;
 }
 
 const StatusInfo: React.FC<StatusInfoProps> = ({
@@ -19,6 +20,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   showBatteryPercentage,
   isVertical,
   isEink,
+  className,
 }) => {
   const formattedTime = useCurrentTime(showTime, use24Hour);
   const batteryLevel = useCurrentBatteryStatus(showBattery);
@@ -28,8 +30,9 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   return (
     <div
       className={clsx(
-        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums',
+        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums text-base-content',
         isVertical ? 'my-auto' : 'flex-row',
+        className,
       )}
     >
       {showTime && <span>{formattedTime}</span>}
