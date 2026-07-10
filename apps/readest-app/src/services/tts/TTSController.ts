@@ -1,7 +1,6 @@
 import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
-import { getSentences } from 'foliate-js/tts.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import {
   TTSGranularity,
@@ -477,6 +476,7 @@ export class TTSController extends EventTarget {
     }
     const doc = this.#ttsDoc;
     if (!doc || this.#ttsSectionIndex < 0) return null;
+    const { getSentences } = await import('foliate-js/tts.js');
     const { textWalker } = await import('foliate-js/text-walker.js');
     const sentences: TimelineSentence[] = [];
     for (const entry of getSentences(
