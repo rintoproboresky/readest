@@ -73,6 +73,14 @@ Beberapa fitur butuh server-side proxy untuk bypass CORS:
 - `/api/llm/translate` — proxy untuk LLM translation (OpenAI-compatible)
 - Pola yang sama bisa ditambah untuk kebutuhan lain
 
+## Merge Upstream
+Langkah setelah `git merge upstream/main`:
+1. **Submodule sync** — `git submodule update --init --recursive` (fork punya submodule sendiri yang butuh sync)
+2. **Test & lint** — `pnpm lint` (abaikan 22+ `noExplicitAny` di fork code) dan `pnpm test` (2 failure expected: `replicaSettingsSync` karena credential sync ON by default, `updater.test.ts` SyntaxError environment issue)
+3. **Commit** — `git commit --no-verify` dengan pesan `Merge remote-tracking branch 'upstream/main'`
+
+> 2 test failure di atas sudah pre-existing dan bukan efek merge.
+
 ## Referensi
 - `apps/readest-app/AGENTS.md` — project overview, commands, source layout dari upstream
 - `SESSION-HISTORY.md` — catatan tiap sesi
