@@ -404,6 +404,7 @@ const Notebook: React.FC = () => {
           <NotebookHeader
             isPinned={isNotebookPinned}
             isSearchBarVisible={isSearchBarVisible && notebookActiveTab === 'notes'}
+            isFullScreenMobile={isMobile && isFullHeightInMobile}
             handleClose={hideNotebook}
             handleTogglePin={handleTogglePin}
             handleToggleSearchBar={handleToggleSearchBar}

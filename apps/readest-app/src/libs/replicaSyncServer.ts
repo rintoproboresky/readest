@@ -3,6 +3,8 @@ import { isAllowedKind, validateRow } from '@/libs/replicaSchemas';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SyncErrorCode } from '@/libs/errors';
 
+// Self-hosted instances accept larger batches and more clock drift than the
+// upstream service. Client uploads remain chunked by the shared protocol cap.
 export const HLC_SKEW_TOLERANCE_MS = 3_600_000;
 export const MAX_PUSH_BATCH = 5000;
 export const MAX_PULL_BATCH = 500;

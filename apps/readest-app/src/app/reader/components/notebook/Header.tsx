@@ -3,12 +3,13 @@ import React from 'react';
 
 import { FiSearch } from 'react-icons/fi';
 import { RiQuillPenLine } from 'react-icons/ri';
-import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
+import { MdArrowBackIosNew, MdClose, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const NotebookHeader: React.FC<{
   isPinned: boolean;
+  isFullScreenMobile?: boolean;
   isSearchBarVisible?: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
@@ -16,6 +17,7 @@ const NotebookHeader: React.FC<{
   showSearchButton?: boolean;
 }> = ({
   isPinned,
+  isFullScreenMobile = false,
   isSearchBarVisible = false,
   handleClose,
   handleTogglePin,
@@ -46,9 +48,12 @@ const NotebookHeader: React.FC<{
           title={_('Close')}
           aria-label={_('Close')}
           onClick={handleClose}
-          className='btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent sm:hidden'
+          className={clsx(
+            'btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent',
+            isFullScreenMobile ? 'ml-auto' : 'sm:hidden',
+          )}
         >
-          <MdArrowBackIosNew />
+          {isFullScreenMobile ? <MdClose size={iconSize18} /> : <MdArrowBackIosNew />}
         </button>
       </div>
       {showSearchButton && (

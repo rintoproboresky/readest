@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { Insets } from '@/types/misc';
@@ -99,6 +100,14 @@ export const useSafeAreaInsets = () => {
     };
     window.addEventListener('focus', handleFocus);
 
+    // A WebView started by CarPlay is already visible to WebKit when its
+    // phone scene attaches, so DOM visibility/focus events may not fire.
+    const unlistenFocus = appService?.isIOSApp
+      ? getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+          if (focused) onUpdateInsets();
+        })
+      : undefined;
+
     return () => {
       timers.forEach(clearTimeout);
       if (window.screen?.orientation) {
@@ -108,6 +117,7 @@ export const useSafeAreaInsets = () => {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      void unlistenFocus?.then((unlisten) => unlisten());
     };
   }, [onUpdateInsets]);
 
