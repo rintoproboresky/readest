@@ -82,6 +82,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     readingStatusUpdatedAt,
     coverHash,
     coverUpdatedAt,
+    pageCount,
     metadata,
     metadataUpdatedAt,
     createdAt,
@@ -108,6 +109,7 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
       : null,
     cover_hash: coverHash ?? null,
     cover_updated_at: coverUpdatedAt ? new Date(coverUpdatedAt).toISOString() : null,
+    page_count: pageCount ?? null,
     source_title: sanitizeString(sourceTitle),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     metadata_updated_at: metadataUpdatedAt ? new Date(metadataUpdatedAt).toISOString() : null,
@@ -134,6 +136,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     reading_status_updated_at,
     cover_hash,
     cover_updated_at,
+    page_count,
     source_title,
     metadata,
     metadata_updated_at,
@@ -168,6 +171,9 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,
     uploadedAt: uploaded_at ? new Date(uploaded_at).getTime() : null,
   };
+  // Only when set: an undefined key would wipe the local count in the pull
+  // merge's `{ ...local, ...remote }` spread.
+  if (page_count != null) book.pageCount = page_count;
   // Native cloud DBBook has no `url` column; a feed book carries its feed URL in
   // metadata so the reader can rebuild the feed:// descriptor here.
   if (!book.url && book.metadata?.feedUrl) {
@@ -199,6 +205,7 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     translation,
     aiInsight,
     global,
+    ink,
     createdAt,
     updatedAt,
     deletedAt,
@@ -221,6 +228,8 @@ export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBook
     translation,
     ai_insight: aiInsight ? JSON.stringify(aiInsight) : null,
     global,
+    // Absent for other notes, so an upsert never clears stored strokes.
+    ink,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
     updated_at: new Date(updatedAt ?? Date.now()).toISOString(),
     // note that only null deleted_at is updated to the database, undefined is not
@@ -245,6 +254,7 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     translation,
     ai_insight,
     global,
+    ink,
     created_at,
     updated_at,
     deleted_at,
@@ -273,6 +283,9 @@ export const transformBookNoteFromDB = (dbBookNote: DBBookNote): BookNote => {
     translation,
     aiInsight,
     global,
+    // No key without strokes: a pulled note is merged over the local one, and
+    // a server without the column must not wipe strokes held locally.
+    ...(ink ? { ink } : {}),
     createdAt: new Date(created_at!).getTime(),
     updatedAt: new Date(updated_at!).getTime(),
     deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,

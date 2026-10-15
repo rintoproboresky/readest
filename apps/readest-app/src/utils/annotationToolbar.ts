@@ -23,6 +23,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'proofread',
   'llm-insight',
   'share',
+  'quotecard',
 ];
 
 // Default toolbar: the eight pre-existing tools in their original order.

@@ -102,12 +102,30 @@ describe('annotationToolbar helpers', () => {
     expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toEqual([
       'copylink',
       'share',
+      'quotecard',
     ]);
-    expect(getAvailableToolTypes(['copy'], true)).toEqual(['copylink', 'share']);
+    expect(getAvailableToolTypes(['copy'], true)).toEqual(['copylink', 'share', 'quotecard']);
+  });
+
+  test('quotecard is opt-in and offered even when text share is unavailable', () => {
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('quotecard');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('quotecard');
+    expect(getToolbarToolTypes(['copy', 'quotecard'], false)).toEqual([
+      'copy',
+      'quotecard',
+      'highlight',
+      'annotate',
+      'search',
+      'dictionary',
+      'translate',
+      'tts',
+      'proofread',
+      'llm-insight',
+    ]);
   });
 
   test('getAvailableToolTypes hides share when !canShare', () => {
-    expect(getAvailableToolTypes(['copy'], false)).toEqual(['copylink']);
+    expect(getAvailableToolTypes(['copy'], false)).toEqual(['copylink', 'quotecard']);
   });
 
   test('addToolToToolbar appends by default and is a no-op when present', () => {

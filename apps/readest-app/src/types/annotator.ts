@@ -8,5 +8,6 @@ export type AnnotationToolType =
   | 'translate'
   | 'tts'
   | 'proofread'
+  | 'llm-insight'
   | 'share'
-  | 'llm-insight';
+  | 'quotecard';
