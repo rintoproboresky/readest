@@ -150,7 +150,7 @@ export const groupResultsByCategory = (
 const panelIcons: Record<SettingsPanelType, IconType> = {
   Font: RiFontSize,
   Layout: RiDashboardLine,
-  Color: VscSymbolColor,
+  Theme: VscSymbolColor,
   Control: LiaHandPointerSolid,
   TTS: PiSpeakerHigh,
   Language: RiTranslate,
@@ -384,6 +384,12 @@ const colorPanelItems = [
     id: 'settings.tts.mediaMetadata',
     labelKey: _('TTS Media Info Update Frequency'),
     keywords: ['tts', 'media', 'metadata', 'bluetooth', 'notification', 'chapter', 'paragraph'],
+    section: 'TTS',
+  },
+  {
+    id: 'settings.tts.playerStyle',
+    labelKey: _('TTS Player Style'),
+    keywords: ['tts', 'player', 'mini', 'style', 'cover', 'full', 'minimal'],
     section: 'TTS',
   },
   {
@@ -718,7 +724,7 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
 
   // add color panel items
   for (const def of colorPanelItems) {
-    items.push(createSettingsItem(def, 'Color'));
+    items.push(createSettingsItem(def, 'Theme'));
   }
 
   // add control panel items

@@ -26,6 +26,7 @@ import {
   SettingsSwitchRow,
 } from './primitives';
 import NumberInput from './NumberInput';
+import { Toggle } from '../primitives/toggle';
 
 const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -455,12 +456,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
         className='flex items-center justify-between px-4'
       >
         <SettingLabel>{_('Override Book Layout')}</SettingLabel>
-        <input
-          type='checkbox'
-          className='toggle'
-          checked={overrideLayout}
-          onChange={() => setOverrideLayout(!overrideLayout)}
-        />
+        <Toggle checked={overrideLayout} onChange={() => setOverrideLayout(!overrideLayout)} />
       </div>
       {mightBeRTLBook && (
         <div
@@ -611,7 +607,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) - gridInsets.top
               : 0
           }
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -623,7 +619,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4) - gridInsets.bottom
               : 0
           }
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -631,7 +627,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
           onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
           min={0}
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -639,7 +635,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
           onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
           min={0}
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput

@@ -315,10 +315,13 @@ struct SingleInstancePayload {
 pub fn run() {
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
-    // builds don't report. Desktop also starts the out-of-process minidump
-    // handler for native crashes; on mobile, native crashes belong to the
-    // sentry-android / sentry-cocoa SDKs. The guard must outlive the app, so it
-    // is held until `run()` returns (after the blocking `.run(...)` call).
+    // builds don't report. This client covers Rust panics and the events the
+    // WebView forwards; native crashes belong to the sentry-android /
+    // sentry-cocoa SDKs on mobile and go unreported on desktop, where the
+    // out-of-process minidump handler is deliberately off (see the
+    // `minidump_feature_is_enabled_on_no_target` test). The guard must outlive
+    // the app, so it is held until `run()` returns (after the blocking
+    // `.run(...)` call).
     let sentry_guard = sentry_config::sentry_dsn().map(|dsn| {
         sentry::init((
             dsn,
@@ -386,11 +389,6 @@ pub fn run() {
             },
         ))
     });
-
-    #[cfg(not(any(target_os = "ios", target_os = "android")))]
-    let _minidump_guard = sentry_guard
-        .as_ref()
-        .map(|guard| tauri_plugin_sentry::minidump::init(guard));
 
     let builder = tauri::Builder::default()
         .plugin(

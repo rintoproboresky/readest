@@ -80,6 +80,16 @@ export const SETTINGS_WHITELIST = [
   'webdav.username',
   'webdav.password',
   'webdav.rootPath',
+  // S3-compatible object store. endpoint / region / bucket sync as plaintext so
+  // a fresh device pre-fills the connect form; accessKeyId / secretAccessKey are
+  // listed in `encryptedFields` below. Per-device bookkeeping (enabled,
+  // deviceId, lastSyncedAt, providerSelectedAt, sync sub-toggles) is
+  // deliberately excluded — mirrors WebDAV.
+  's3.endpoint',
+  's3.region',
+  's3.bucket',
+  's3.accessKeyId',
+  's3.secretAccessKey',
 ] as const;
 
 /**
@@ -105,6 +115,8 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'aiSettings.llm.fallbacks',
   'webdav.username',
   'webdav.password',
+  's3.accessKeyId',
+  's3.secretAccessKey',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];

@@ -24,7 +24,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
-import ColorPanel from './ColorPanel';
+import ThemePanel from './ThemePanel';
 import IntegrationsPanel from './IntegrationsPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
@@ -39,7 +39,7 @@ import AIInsightPanel from './llm/AIInsightPanel';
 export type SettingsPanelType =
   | 'Font'
   | 'Layout'
-  | 'Color'
+  | 'Theme'
   | 'Control'
   | 'TTS'
   | 'Language'
@@ -95,9 +95,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Layout'),
     },
     {
-      tab: 'Color',
+      tab: 'Theme',
       icon: VscSymbolColor,
-      label: _('Color'),
+      label: _('Theme'),
     },
     {
       tab: 'Control',
@@ -182,7 +182,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   >({
     Font: null,
     Layout: null,
-    Color: null,
+    Theme: null,
     Control: null,
     TTS: null,
     Language: null,
@@ -217,7 +217,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const panelMap: Record<string, SettingsPanelType> = {
         font: 'Font',
         layout: 'Layout',
-        color: 'Color',
+        theme: 'Theme',
         control: 'Control',
         tts: 'TTS',
         language: 'Language',
@@ -460,10 +460,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Layout', fn)}
           />
         )}
-        {activePanel === 'Color' && (
-          <ColorPanel
+        {activePanel === 'Theme' && (
+          <ThemePanel
             bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Color', fn)}
+            onRegisterReset={(fn) => registerResetFunction('Theme', fn)}
           />
         )}
         {activePanel === 'Control' && (

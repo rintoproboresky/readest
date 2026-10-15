@@ -124,7 +124,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
-      } catch (err) {
+      } catch {
         if (cancelled) return;
         if (!token) {
           setError(_('Unable to fetch the translation. Please log in first and try again.'));

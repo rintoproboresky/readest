@@ -131,7 +131,7 @@ describe('replicaCryptoMiddleware', () => {
         password: wrapField(cipher),
         username: wrapField(await writer.encryptField('alice')),
       };
-      await decryptRowFields(fields, ['username', 'password'], reader, onLocked);
+      await decryptRowFields(fields, ['username', 'password'], reader, { onLocked });
       // Callback fired exactly once even though there are two cipher
       // fields — once unlocked, the second field decrypts directly.
       expect(onLocked).toHaveBeenCalledTimes(1);
@@ -149,7 +149,7 @@ describe('replicaCryptoMiddleware', () => {
         throw new Error('user cancelled');
       });
       const fields: FieldsObject = { password: wrapField(cipher) };
-      await decryptRowFields(fields, ['password'], reader, onLocked);
+      await decryptRowFields(fields, ['password'], reader, { onLocked });
       expect(onLocked).toHaveBeenCalledTimes(1);
       expect(fields['password']).toBeUndefined();
     });
@@ -164,6 +164,63 @@ describe('replicaCryptoMiddleware', () => {
       const fields: FieldsObject = { password: wrapField(cipher) };
       await decryptRowFields(fields, ['password'], reader);
       expect(fields['password']).toBeUndefined();
+    });
+
+    test('wrong-passphrase decrypt asks for a new passphrase and retries the field', async () => {
+      const writer = new CryptoSession({ client, iterations: ITER });
+      await writer.setup('correct');
+      const cipher = await writer.encryptField('secret');
+      const userCipher = await writer.encryptField('alice');
+      const fallbacks = [{ provider: 'openai', apiKey: 'sk-test' }];
+      const fallbacksCipher = await writer.encryptField(JSON.stringify(fallbacks));
+
+      // Reader is unlocked with a stale/wrong passphrase — the state a device
+      // lands in when a mistyped passphrase was accepted and keychained.
+      const reader = new CryptoSession({ client, iterations: ITER });
+      await reader.unlock('wrong');
+      const onWrongPassphrase = vi.fn(async () => {
+        reader.lock();
+        await reader.unlock('correct');
+      });
+      const fields: FieldsObject = {
+        password: wrapField(cipher),
+        username: wrapField(userCipher),
+        fallbacks: wrapField(fallbacksCipher),
+      };
+      await decryptRowFields(
+        fields,
+        ['password', 'username', 'fallbacks'],
+        reader,
+        { onWrongPassphrase },
+      );
+
+      // One recovery attempt restores strings and structured values without data loss.
+      expect(onWrongPassphrase).toHaveBeenCalledTimes(1);
+      expect((fields['password'] as { v: unknown }).v).toBe('secret');
+      expect((fields['username'] as { v: unknown }).v).toBe('alice');
+      expect((fields['fallbacks'] as { v: unknown }).v).toEqual(fallbacks);
+    });
+
+    test('onWrongPassphrase runs at most once and the field drops if it fails', async () => {
+      const writer = new CryptoSession({ client, iterations: ITER });
+      await writer.setup('correct');
+      const cipher = await writer.encryptField('secret');
+      const userCipher = await writer.encryptField('alice');
+
+      const reader = new CryptoSession({ client, iterations: ITER });
+      await reader.unlock('wrong');
+      const onWrongPassphrase = vi.fn(async () => {
+        throw new Error('user cancelled');
+      });
+      const fields: FieldsObject = {
+        password: wrapField(cipher),
+        username: wrapField(userCipher),
+      };
+      await decryptRowFields(fields, ['password', 'username'], reader, { onWrongPassphrase });
+
+      expect(onWrongPassphrase).toHaveBeenCalledTimes(1);
+      expect(fields['password']).toBeUndefined();
+      expect(fields['username']).toBeUndefined();
     });
 
     test('leaves plaintext envelopes untouched (no cipher detected)', async () => {
@@ -243,7 +300,11 @@ describe('replicaCryptoMiddleware', () => {
       await writer.setup('pw');
       const userCipher = await writer.encryptField('alice');
       const passCipher = await writer.encryptField('hunter2');
-      const before = { username: userCipher.c, password: passCipher.c };
+      const before = {
+        username: userCipher.c,
+        password: passCipher.c,
+        fallbacks: 'cipher-fallbacks',
+      };
 
       // Reader will succeed on user, "fail" on password by deleting before decrypt.
       const reader = new CryptoSession({ client, iterations: ITER });
@@ -251,6 +312,7 @@ describe('replicaCryptoMiddleware', () => {
       const fields: FieldsObject = {
         username: wrapField(userCipher),
         password: wrapField(passCipher),
+        fallbacks: wrapField([{ provider: 'openai' }]),
       };
       await decryptRowFields(fields, ['username'], reader); // only decrypt username
       // Pretend the password decrypt failed by removing it.
@@ -258,6 +320,7 @@ describe('replicaCryptoMiddleware', () => {
 
       const out = collectDecryptSuccess(fields, before);
       expect(out['username']).toBe(userCipher.c);
+      expect(out['fallbacks']).toBe('cipher-fallbacks');
       expect(out['password']).toBeUndefined();
     });
   });
