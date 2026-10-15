@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
   ErrorCodes,
@@ -12,6 +12,13 @@ import { polish, preprocess } from '@/services/translators';
 
 import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
+import { useEnv } from '@/context/EnvContext';
+import {
+  ensureCustomTranslatorsLoaded,
+  useCustomTranslatorStore,
+} from '@/store/customTranslatorStore';
+import { isCustomTranslatorName } from '@/services/translators/custom';
+import { isCustomTranslatorAllowed } from '@/utils/access';
 import { useTranslation } from './useTranslation';
 
 export function useTranslator({
@@ -20,27 +27,40 @@ export function useTranslator({
   targetLang = 'EN',
   enablePolishing = true,
   enablePreprocessing = true,
+  promptId,
+  bookTitle,
+  bookAuthor,
 }: UseTranslatorOptions = {}) {
   const _ = useTranslation();
   const { token } = useAuth();
+  const { envConfig } = useEnv();
   const [loading, setLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(provider);
   const [translator, setTransltor] = useState(() => getTranslator(provider));
-  const [translators] = useState(() => getTranslators());
+  const customTranslators = useCustomTranslatorStore((s) => s.translators);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const translators = useMemo(() => getTranslators(), [customTranslators]);
+
+  useEffect(() => {
+    ensureCustomTranslatorsLoaded(envConfig);
+  }, [envConfig]);
 
   useEffect(() => {
     setLoading(false);
   }, [provider, sourceLang, targetLang]);
 
   useEffect(() => {
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
+    const hasPremium = isCustomTranslatorAllowed(token);
+    const availableTranslators = translators.filter((t) =>
+      isTranslatorAvailable(t, !!token, hasPremium),
+    );
     const selectedTranslator =
       availableTranslators.find((t) => t.name === provider) || availableTranslators[0]!;
     const selectedProviderName = selectedTranslator.name as TranslatorName;
-    setTransltor(getTranslator(selectedProviderName));
+    setTransltor(selectedTranslator);
     setSelectedProvider(selectedProviderName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider]);
+  }, [provider, translators, token]);
 
   const translate = useCallback(
     async (
@@ -50,6 +70,11 @@ export function useTranslator({
       const sourceLanguage = options?.source || sourceLang;
       const targetLanguage = options?.target || targetLang || getLocale();
       const useCache = options?.useCache ?? false;
+      const context = { promptId, bookTitle, bookAuthor };
+      const activeTranslator = translators.find((t) => t.name === selectedProvider);
+      const cacheProvider =
+        activeTranslator?.getCacheKey?.(sourceLanguage, targetLanguage, context) ??
+        selectedProvider;
       const textsToTranslate = enablePreprocessing ? preprocess(input) : input;
 
       if (textsToTranslate.length === 0 || textsToTranslate.every((t) => !t?.trim())) {
@@ -67,9 +92,7 @@ export function useTranslator({
             text,
             sourceLanguage,
             targetLanguage,
-            selectedProvider,
-            undefined,
-            undefined,
+            cacheProvider,
           );
           if (cachedTranslation) return;
 
@@ -81,7 +104,7 @@ export function useTranslator({
       if (textsNeedingTranslation.length === 0) {
         const results = await Promise.all(
           textsToTranslate.map((text) =>
-            getFromCache(text, sourceLanguage, targetLanguage, selectedProvider, undefined, undefined).then(
+            getFromCache(text, sourceLanguage, targetLanguage, cacheProvider).then(
               (cached) => cached || text,
             ),
           ),
@@ -93,16 +116,17 @@ export function useTranslator({
       setLoading(true);
 
       try {
-        const translator = translators.find((t) => t.name === selectedProvider);
-        if (!translator) {
+        if (!activeTranslator) {
           throw new Error(`No translator found for provider: ${selectedProvider}`);
         }
-        const translatedTexts = await translator.translate(
+        const translatedTexts = await activeTranslator.translate(
           textsNeedingTranslation,
           sourceLanguage,
           targetLanguage,
           token,
           useCache,
+          undefined,
+          context,
         );
 
         await Promise.all(
@@ -112,9 +136,7 @@ export function useTranslator({
               translatedTexts[index] || '',
               sourceLanguage,
               targetLanguage,
-              selectedProvider,
-              undefined,
-              undefined,
+              cacheProvider,
             );
           }),
         );
@@ -134,9 +156,7 @@ export function useTranslator({
                 originalText,
                 sourceLanguage,
                 targetLanguage,
-                selectedProvider,
-                undefined,
-                undefined,
+                cacheProvider,
               );
 
               if (cachedTranslation) {
@@ -157,12 +177,23 @@ export function useTranslator({
           });
           setSelectedProvider('azure');
         }
+        if (
+          err instanceof Error &&
+          err.message === ErrorCodes.UNAUTHORIZED &&
+          isCustomTranslatorName(selectedProvider)
+        ) {
+          eventDispatcher.dispatch('toast', {
+            timeout: 5000,
+            message: _('Check the API key for {{name}}', { name: activeTranslator?.label }),
+            type: 'error',
+          });
+        }
         setLoading(false);
         throw err instanceof Error ? err : new Error(String(err));
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedProvider, sourceLang, targetLang, translator, token],
+    [selectedProvider, sourceLang, targetLang, translators, token, promptId, bookTitle, bookAuthor],
   );
 
   return {
