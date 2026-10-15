@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
+import { MdCloudSync, MdSync, MdSyncProblem, MdOutlineSensors } from 'react-icons/md';
 
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
@@ -39,6 +39,7 @@ import {
   isBiometricSupported,
 } from '@/services/biometric';
 import { selectDirectory } from '@/utils/bridge';
+import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
@@ -59,7 +60,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
-  const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
@@ -136,8 +136,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   };
 
   const cycleThemeMode = () => {
-    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    setThemeMode(nextMode);
+    setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
   const handleFullScreen = () => {
@@ -162,16 +161,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.alwaysShowStatusBar;
     saveSysSettings(envConfig, 'alwaysShowStatusBar', newValue);
     setIsAlwaysShowStatusBar(newValue);
-  };
-
-  const toggleAutoUploadBooks = () => {
-    const newValue = !settings.autoUpload;
-    saveSysSettings(envConfig, 'autoUpload', newValue);
-    setIsAutoUpload(newValue);
-
-    if (newValue && !user) {
-      navigateToLogin(router);
-    }
   };
 
   const toggleAutoImportBooksOnOpen = () => {
@@ -243,7 +232,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   };
 
   const handleSetSavedBookCoverForLockScreen = async () => {
-    if (!(await requestStoragePermission()) && appService?.distChannel === 'readest') return;
+    if (!(await requestStoragePermission())) return;
 
     const newValue = settings.savedBookCoverForLockScreen ? '' : 'default';
     if (newValue) {
@@ -269,7 +258,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ? _('Dark Mode')
       : themeMode === 'light'
         ? _('Light Mode')
-        : _('Auto Mode');
+        : themeMode === 'ambient'
+          ? _('Ambient Mode')
+          : _('Auto Mode');
 
   const savedBookCoverPath = settings.savedBookCoverForLockScreenPath;
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
@@ -388,14 +379,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
 
-      {readestEnabled && (
-        <MenuItem
-          label={_('Auto Upload Books to Cloud')}
-          toggled={isAutoUpload}
-          onClick={toggleAutoUploadBooks}
-        />
-      )}
-
       {isTauriAppPlatform() && (
         <MenuItem
           label={_('Auto Import on File Open')}
@@ -431,7 +414,15 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       <MenuItem
         label={themeModeLabel}
-        Icon={themeMode === 'dark' ? PiMoon : themeMode === 'light' ? PiSun : TbSunMoon}
+        Icon={
+          themeMode === 'dark'
+            ? PiMoon
+            : themeMode === 'light'
+              ? PiSun
+              : themeMode === 'ambient'
+                ? MdOutlineSensors
+                : TbSunMoon
+        }
         onClick={cycleThemeMode}
       />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
@@ -476,7 +467,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               onClick={toggleBiometricUnlock}
             />
           )}
-          {appService?.isAndroidApp && appService?.distChannel !== 'playstore' && (
+          {appService?.isAndroidApp && (
             <MenuItem
               label={_('Save Book Cover')}
               tooltip={_('Auto-save last book cover')}

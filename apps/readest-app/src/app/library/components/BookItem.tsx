@@ -4,6 +4,7 @@ import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
   LiaCloudDownloadAltSolid,
+  LiaHeadphonesSolid,
   LiaInfoCircleSolid,
 } from 'react-icons/lia';
 
@@ -17,6 +18,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
@@ -96,8 +98,11 @@ const BookItem: React.FC<BookItemProps> = ({
           mode={mode}
           book={book}
           coverFit={coverFit}
-          showSpine={false}
-          imageClassName='rounded shadow-md'
+          showSpine={settings.librarySkeuomorphicCovers}
+          imageClassName={clsx(
+            'shadow-md',
+            settings.librarySkeuomorphicCovers ? 'rounded-none' : 'rounded',
+          )}
           onAspectRatioChange={setCoverAspect}
         />
         {bookSelected && (
@@ -172,6 +177,15 @@ const BookItem: React.FC<BookItemProps> = ({
                 </div>
               </button>
             )}
+            {book.hasNarration && (
+              <div
+                className='pt-[2px] sm:pt-[1px]'
+                title={_('Includes narration')}
+                aria-label={_('Includes narration')}
+              >
+                <LiaHeadphonesSolid size={iconSize15} />
+              </div>
+            )}
             {transferProgress !== null ? (
               transferProgress === 100 ? null : (
                 <div
@@ -187,6 +201,9 @@ const BookItem: React.FC<BookItemProps> = ({
                 ></div>
               )
             ) : (
+              // A feed book has no file to move either way, so it never gets a
+              // cloud badge — it would only queue a transfer that fails (#5307).
+              !isFeedBook(book) &&
               (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
                 <button
                   aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
@@ -204,11 +221,9 @@ const BookItem: React.FC<BookItemProps> = ({
                     }
                   }}
                 >
-                  {!book.uploadedAt &&
-                    settings.autoUpload &&
-                    isReadestCloudStorageActive(settings) && (
-                      <LiaCloudUploadAltSolid size={iconSize15} />
-                    )}
+                  {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
+                    <LiaCloudUploadAltSolid size={iconSize15} />
+                  )}
                   {book.uploadedAt && !book.downloadedAt && (
                     <LiaCloudDownloadAltSolid size={iconSize15} />
                   )}

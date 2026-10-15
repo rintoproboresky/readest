@@ -492,6 +492,9 @@ pub fn run() {
     let builder = builder.plugin(macos::traffic_light::init());
 
     #[cfg(target_os = "macos")]
+    let builder = builder.plugin(macos::window::init());
+
+    #[cfg(target_os = "macos")]
     let builder = builder.plugin(macos::safari_auth::init());
 
     #[cfg(target_os = "ios")]
@@ -663,11 +666,14 @@ pub fn run() {
             #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
 
+            // The overlay title bar draws its title over the app's own header,
+            // so `macos::window::init()` hides the title text and the window
+            // can carry a real name for the Window menu and VoiceOver.
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
                 .decorations(true)
                 .title_bar_style(TitleBarStyle::Overlay)
-                .title("");
+                .title("Readest");
 
             #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = {
@@ -708,26 +714,29 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             {
                 let window = win_builder.build().unwrap();
-                // On macOS, closing a window (via Cmd+W or the red traffic light) should
-                // not quit the app — only Cmd+Q should. Hide the window instead so the
-                // app keeps running in the dock, and restore it when the user reopens
-                // the app from the dock.
+                // On macOS, closing a window (via Cmd+W or the red traffic light)
+                // should not quit the app — only Cmd+Q should — and normally hides
+                // instead of minimizing (#5240): the app keeps running in the dock
+                // and the window is restored when the user reopens the app from the
+                // dock. On Tahoe the hide is defensive against the `orderOut:`
+                // phantom-window regression (#4875); see
+                // `macos::window::hide_main_window` for the fullscreen-failure
+                // fallback.
                 let window_for_close = window.clone();
-                window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                window.on_window_event(move |event| match event {
+                    tauri::WindowEvent::CloseRequested { api, .. } => {
                         api.prevent_close();
-                        // macOS 26 (Tahoe) regressed `NSWindow` ordering: `orderOut:`
-                        // (what `hide()` maps to) can leave a focused black phantom
-                        // window on screen instead of hiding it (#4875). Minimize
-                        // instead on Tahoe — a different AppKit path that still keeps
-                        // the app in the dock and preserves the open book. The Reopen
-                        // handler below already unminimizes on dock reopen.
-                        if macos::os_version::is_macos_tahoe_or_later() {
-                            let _ = window_for_close.minimize();
-                        } else {
-                            let _ = window_for_close.hide();
-                        }
+                        macos::window::hide_main_window(&window_for_close);
                     }
+                    // Safety net for JS-side `show()` callers (e.g.
+                    // `ensureMainLibraryWindow` in src/utils/nav.ts re-shows a hidden
+                    // main window from a reader window without a dock Reopen): the
+                    // window can only become key after it is back on screen, so any
+                    // pending defensively-zeroed frame must be restored by now.
+                    tauri::WindowEvent::Focused(true) => {
+                        macos::window::restore_main_window_frame(&window_for_close);
+                    }
+                    _ => {}
                 });
             }
 
@@ -766,9 +775,21 @@ pub fn run() {
                         ..
                     } => {
                         if let Some(window) = app_handle.get_webview_window("main") {
+                            // Undo a pending Tahoe defensive hide (zeroed frame) before
+                            // showing so the window reappears at its real position and
+                            // size. No-op when the window was hidden plainly.
+                            macos::window::restore_main_window_frame(&window);
                             let _ = window.show();
                             let _ = window.set_focus();
                             let _ = window.unminimize();
+                        }
+                    }
+                    // A programmatic exit emits ExitRequested before the window-state
+                    // plugin performs its final save. Restore any zeroed frame while
+                    // the window is still hidden so live geometry remains valid.
+                    tauri::RunEvent::ExitRequested { .. } => {
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            macos::window::restore_main_window_frame(&window);
                         }
                     }
                     _ => {}

@@ -15,6 +15,8 @@ import {
   getActiveFileSyncBackends,
 } from '@/services/sync/cloudSyncProvider';
 import { isDemoBook } from '@/services/demoBooks';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
+import { ensureFeedBookCover } from '@/services/rss/feedBook';
 import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
 import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
 import { useSyncContext } from '@/context/SyncContext';
@@ -22,7 +24,9 @@ import {
   pickFresherReadingStatus,
   needsCoverRefresh,
   pickFresherCover,
+  pickFresherMetadata,
 } from '@/app/library/utils/libraryUtils';
+import { getPrimaryLanguage } from '@/utils/book';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -57,7 +61,9 @@ export const useBooksSync = () => {
       // got its branch order swapped (it currently checks Books/<hash>
       // before falling back to filePath; flipping that order would make
       // peers chase a non-existent path instead of downloading).
-      .map(({ filePath: _filePath, ...rest }): Book => rest);
+      // `altFilePaths` (the other on-disk names that resolve to the same book)
+      // is device-local for exactly the same reason.
+      .map(({ filePath: _filePath, altFilePaths: _altFilePaths, ...rest }): Book => rest);
     return {
       books: newBooks,
       lastSyncedAt: lastSyncedAtBooks,
@@ -226,6 +232,23 @@ export const useBooksSync = () => {
         const cover = pickFresherCover(oldBook, matchingBook);
         mergedBook.coverHash = cover.coverHash;
         mergedBook.coverUpdatedAt = cover.coverUpdatedAt;
+        // The metadata group merges on its own metadataUpdatedAt clock so a
+        // metadata edit survives losing whole-row LWW to page-turn progress
+        // (issue #5438). Null means neither side is fresher — the row-level
+        // winner already in mergedBook stands.
+        const meta = pickFresherMetadata(oldBook, matchingBook);
+        if (meta) {
+          mergedBook.title = meta.title;
+          mergedBook.author = meta.author;
+          mergedBook.tags = meta.tags;
+          mergedBook.metadata = meta.metadata;
+          mergedBook.metadataUpdatedAt = meta.metadataUpdatedAt;
+          // TTS reads primaryLanguage (not metadata.language); recompute it the
+          // same way the editing device did so the edit is effective here too.
+          if (meta.metadata) {
+            mergedBook.primaryLanguage = getPrimaryLanguage(meta.metadata.language);
+          }
+        }
         return mergedBook;
       }
       return oldBook;
@@ -242,13 +265,30 @@ export const useBooksSync = () => {
     appService?.saveLibraryBooks(updatedLibrary);
 
     const bookHashesInLibrary = new Set(updatedLibrary.map((book) => book.hash));
+    // `uploadedAt` gates adoption so a peer never shelves a book whose file it
+    // cannot fetch. A feed book has no file to fetch — it is rebuilt from
+    // `metadata.feedUrl` — so it would never pass that gate and the
+    // subscription stayed stuck on the device that added it (issue #5307).
     const newBooks = cloudBooks.filter(
       (newBook) =>
-        !bookHashesInLibrary.has(newBook.hash) && newBook.uploadedAt && !newBook.deletedAt,
+        !bookHashesInLibrary.has(newBook.hash) &&
+        (newBook.uploadedAt || isFeedBook(newBook)) &&
+        !newBook.deletedAt,
     );
 
     const processNewBook = async (newBook: Book) => {
-      newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+      // A feed book has no cover in cloud storage; its cover is derived from the
+      // feed descriptor, so this device regenerates the same image locally.
+      newBook.coverImageUrl =
+        appService && isFeedBook(newBook)
+          ? await ensureFeedBookCover(appService, newBook)
+          : await appService?.generateCoverImageUrl(newBook);
+      // primaryLanguage is not a cloud column; without this the reader later
+      // guesses it from the parsed document, ignoring a language the user set
+      // in the synced metadata — TTS reads primaryLanguage (issue #5438).
+      if (newBook.metadata?.language) {
+        newBook.primaryLanguage = getPrimaryLanguage(newBook.metadata.language);
+      }
       newBook.syncedAt = Date.now();
       updatedLibrary.push(newBook);
     };

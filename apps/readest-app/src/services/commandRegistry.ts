@@ -294,8 +294,8 @@ const layoutPanelItems = [
   },
   {
     id: 'settings.layout.pageGap',
-    labelKey: _('Column Gap (%)'),
-    keywords: ['page', 'gap', 'spacing', 'gutter'],
+    labelKey: _('Additional Margin (%)'),
+    keywords: ['page', 'margin', 'additional', 'gap', 'spacing', 'gutter', 'column'],
     section: 'Page',
   },
   {
@@ -365,7 +365,7 @@ const colorPanelItems = [
   {
     id: 'settings.color.backgroundTexture',
     labelKey: _('Background Image'),
-    keywords: ['background', 'texture', 'image', 'paper', 'pattern'],
+    keywords: ['background', 'texture', 'image', 'paper', 'pattern', 'library', 'reader'],
     section: 'Theme',
   },
   {
@@ -496,6 +496,12 @@ const controlPanelItems = [
     id: 'settings.control.screenWakeLock',
     labelKey: _('Keep Screen Awake'),
     keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
+    section: 'Device',
+  },
+  {
+    id: 'settings.control.autohideCursor',
+    labelKey: _('Auto-hide Cursor'),
+    keywords: ['cursor', 'mouse', 'pointer', 'hide', 'autohide', 'idle'],
     section: 'Device',
   },
   {
@@ -648,11 +654,6 @@ const actionItems = [
     keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
   },
   {
-    id: 'action.autoUpload',
-    labelKey: _('Auto Upload Books to Cloud'),
-    keywords: ['auto', 'upload', 'cloud', 'sync', 'backup'],
-  },
-  {
     id: 'action.reload',
     labelKey: _('Reload Page'),
     keywords: ['reload', 'refresh', 'page'],
@@ -681,7 +682,6 @@ export interface CommandRegistryOptions {
   toggleFullscreen: () => void;
   toggleAlwaysOnTop: () => void;
   toggleScreenWakeLock: () => void;
-  toggleAutoUpload: () => void;
   reloadPage: () => void;
   toggleOpenLastBooks: () => void;
   showAbout: () => void;
@@ -803,13 +803,6 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     createActionItem({
       id: 'action.screenWakeLock',
       action: options.toggleScreenWakeLock,
-    }),
-  );
-
-  items.push(
-    createActionItem({
-      id: 'action.autoUpload',
-      action: options.toggleAutoUpload,
     }),
   );
 

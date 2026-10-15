@@ -55,3 +55,5 @@ result*
 .claude/settings.local.json
 
 tmp_logs/
+fastlane/staging/
+fastlane/metadata-play/android/en-US/changelogs
