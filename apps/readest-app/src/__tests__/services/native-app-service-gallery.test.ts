@@ -75,11 +75,11 @@ vi.mock('@/services/settingsService', () => ({
   saveSettings: vi.fn().mockResolvedValue(undefined),
 }));
 
-async function initAndroidService() {
+async function initAndroidService(customRootDir?: string) {
   osTypeMock.mockReturnValue('android');
   vi.resetModules();
   const mod = await import('@/services/nativeAppService');
-  const service = new mod.NativeAppService();
+  const service = new mod.NativeAppService(customRootDir);
   await service.init();
   return service;
 }
@@ -139,5 +139,16 @@ describe('NativeAppService.saveImageToGallery', () => {
       expect.stringContaining('Failed to save image to gallery'),
       'Failed to build unique file: /storage/emulated/0/Pictures/Readest image.png',
     );
+  });
+});
+
+describe('NativeAppService mobile library root', () => {
+  test('does not apply a desktop custom root on Android', async () => {
+    const service = await initAndroidService('/tmp/custom-library');
+
+    const resolvedBooksPath = service.resolvePath('sample.epub', 'Books');
+
+    expect(resolvedBooksPath.fp).toBe('Readest/Books/sample.epub');
+    expect(resolvedBooksPath.fp).not.toContain('/tmp/custom-library');
   });
 });
